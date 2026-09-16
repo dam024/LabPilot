@@ -176,7 +176,7 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
 
         self.ax_right.setXLink(self.ax)
 
-        def update_views():
+        def update_views(*args):
             if self.ax_right is None:
                 return
 

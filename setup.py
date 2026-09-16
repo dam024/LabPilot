@@ -21,8 +21,6 @@ setup(
         "numpy>=2.5.0",
         "pyqtgraph>=0.14.0",
         "pyside6>=6.11.0",
-        "pyside6_addons==6.11.2",
-        "pyside6_essentials==6.11.2",
         "rocksdict>=0.3.29",
         "scipy>=1.18.0",
         "tqdm>=4.70.0",

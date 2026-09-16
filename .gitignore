@@ -12,6 +12,7 @@ specifics/
 .DS_store
 build/*
 *.so
+outputs/*
 
 # C extensions (build artifacts)
 # Exclude compiled extensions in build/ directory
