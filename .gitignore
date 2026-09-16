@@ -5,21 +5,20 @@ __pycache__/
 
 # Custom
 .local_storage/*
-saved_outputs/Laser_characterization/04_05_2026_LIV_Characterization/transmission_measurement/data.npy
-saved_outputs/gluing_tests/2026-07-30_SAMPLE_OPTOCAST_GLUE_CHIP_A1/output_fiber_glue_curing/transmission_measurement/data.npy
-saved_outputs/gluing_tests/2026-07-30_SAMPLE_OPTOCAST_GLUE_CHIP_A1/output_fiber_glue_curing/transmission_measurement/originals.zip
-saved_outputs/gluing_tests/2026-08-21_SAMPLE_DELO_OB6799_GLUE_CHIP_B1/output_glue_curing/transmission_measurement/originals.zip
-saved_outputs/temperature_resistance/2025_05_12_FIRST_GLUING_TEST/blowing_1/transmission_measurement/data.npy
-saved_outputs/transmission_measurement/2026_05_06_LIGENTEC_CHIP_C4/transmission_measurement/data.npy
-TO_STUDY/DLCpro_v3.5.1.zip
 *.sublime-workspace
 *.sublime-project
 specifics/
 .python-version
 .DS_store
-
-# C extensions
+build/*
 *.so
+
+# C extensions (build artifacts)
+# Exclude compiled extensions in build/ directory
+build/*.so
+build/**/*.so
+# Exclude C source files from compilation
+build/*.c
 
 # Distribution / packaging
 .Python

@@ -4,15 +4,14 @@ SNAPSHOT Cython Compilation Setup Script
 
 This script compiles Python files to Cython extension modules (.so on macOS, .pyd on Windows).
 
-The compiled modules are placed in the 'cython' directory and can be imported
-alongside pure Python code.
+The compiled modules are placed in the 'cython' directory to keep source files clean.
 
 Usage:
     python setup_cython.py build_ext --inplace
 
 This will:
 1. Compile all Cython-eligible Python files to .so extensions
-2. Place compiled modules in the 'cython' directory
+2. Place compiled modules in the 'cython' directory (not overwriting source files)
 3. Maintain Python compatibility (can run with or without compiled extensions)
 
 Note: Some files with advanced type annotations (PEP 695 syntax) are compiled
@@ -27,7 +26,7 @@ PEP 695 Generic Syntax Files (will be improved in Step 2):
 - labtools.plots.plots
 - labtools.utils
 
-These files use Python 3.12+ PEP 695 syntax (e.g., class Foo[T]: or def foo[T]()) which is not
+These files use Python 3.12+ PEP 695 syntax (e.g., class Foo[T]:) which is not
 yet fully supported by Cython. They will be compiled as pure Python for now
 and documented for future migration.
 """
@@ -39,11 +38,12 @@ import sys
 from pathlib import Path
 
 # Add the project root to the path
-HERE = Path(__file__).parent.resolve()
-sys.path.insert(0, str(HERE))
+# HERE = Path(__file__).parent.resolve()
+# sys.path.insert(0, str(HERE))
 
 import numpy as np
 from setuptools import setup, Extension, find_packages
+from setuptools.command import build_ext
 from Cython.Build import cythonize
 
 
@@ -107,7 +107,9 @@ plots_files = [
 # data_files = []  # Empty - all files excluded
 
 # Collect all source files
-source_files = core_modules + labtools_files + gui_files + plots_files + []  # No data files
+source_files = (
+    core_modules + labtools_files + gui_files + plots_files + []
+)  # No data files
 
 # ============================================================================
 # Create Extension Modules with Cython Compiler Directives
@@ -131,9 +133,9 @@ for module_name, source_path in source_files:
 
 # Cython compiler directives for all extensions
 cython_directives = {
-    'language_level': 3,
-    'binding': True,  # Enable C API binding
-    'always_allow_keywords': True,  # Allow keyword arguments
+    "language_level": 3,
+    "binding": True,  # Enable C API binding
+    "always_allow_keywords": True,  # Allow keyword arguments
 }
 
 # Apply directives to each extension
@@ -143,7 +145,58 @@ for ext in ext_modules:
 
 
 # ============================================================================
-# Setup Configuration
+# Define the custom build class
+# ============================================================================
+
+
+class CleanBuildExt(build_ext.build_ext):
+    """
+    Custom build_ext that:
+    1. Builds extensions to build/ directory
+    2. Copies them to cython/ directory with clean module names
+    3. Leaves source files in src/ untouched
+    """
+
+    def run(self):
+        # Run normal build first
+        super().run()
+        return
+
+        # Copy compiled extensions to cython/ directory
+        build_dir = Path("build/lib.macosx-26.5-arm64-cpython-313")
+
+        if build_dir.exists():
+            # Find all .so files in build directory
+            for so_file in build_dir.glob("*.so"):
+                # Get the module name from the filename
+                stem = so_file.stem
+                # Remove the version/platform suffix
+                if "cpython-313-darwin" in stem:
+                    module_name = stem.replace("cpython-313-darwin", "")
+                else:
+                    module_name = stem
+
+                # Create target directory structure matching source
+                # Remove trailing dots if any
+                module_name = module_name.rstrip(".")
+                target_path = Path("labtools_so") / module_name / f"{module_name}.so"
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Copy the compiled extension
+                import shutil
+
+                shutil.copy(so_file, target_path)
+                print(f"  Copied {so_file.name} -> {target_path}")
+
+        print(f"\n{'='*80}")
+        print(f"Compiled extensions are now in: labtools_so/")
+        print(f"{'='*80}\n")
+        print("Source files in src/ remain unchanged.")
+        print("Import the compiled modules from: from cython.module_name import ...")
+
+
+# ============================================================================
+# Setup Configuration with cython/ output directory
 # ============================================================================
 
 setup(
@@ -172,5 +225,9 @@ setup(
             "cython>=0.29.0",
             "setuptools>=61.0",
         ],
+    },
+    # Custom command to copy compiled extensions to cython/ directory
+    cmdclass={
+        "build_ext": CleanBuildExt,
     },
 )

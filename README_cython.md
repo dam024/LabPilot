@@ -2,71 +2,60 @@
 
 This document describes the Cython compilation infrastructure for the SNAPSHOT project.
 
+## Build Artifacts Handling
+
+The following directories are excluded from git version control:
+- `build/` - Contains C source files and intermediate build artifacts
+- `build/lib.macosx-*/` - Contains compiled `.so` files
+
+To include the compiled extensions in git, remove them from `.gitignore`:
+```gitignore
+build/*.so
+build/**/*.so
+```
+
 ## Project Structure
 
 ```
 SNAPSHOT/
-├── src/                    # Cython-eligible source files
-│   ├── config.py          # Configuration module
-│   ├── main.py            # Main entry point
-│   ├── specific_modules.py # Specific modules
-│   ├── ofdr_reader.py     # OFDR reader
-│   ├── readers.py         # Readers collection
-│   ├── temperature_readers.py # Temperature readers
-│   ├── thorlabs_power_meter.py # Thorlabs power meter
-│   ├── views.py           # Views definitions
-│   ├── config.cpython-313-darwin.so  # Compiled extension
-│   ├── main.cpython-313-darwin.so    # Compiled extension
-│   ├── specific_modules.cpython-313-darwin.so  # Compiled extension
-│   ├── ...                # All compiled extensions
-│   └── labtools/          # Labtools package
-│       ├── DataReceiver.py
-│       ├── analysis.py
-│       ├── measurement_procedure.py
-│       ├── scpi_instrument.py
-│       ├── utils.py
-│       ├── _logging.py
-│       ├── MainLoopHandler.py
-│       ├── config.cpython-313-darwin.so  # Compiled extension
-│       ├── MainLoopHandler.cpython-313-darwin.so  # Compiled extension
-│       └── GUI/           # GUI subpackage
-│       └── plots/         # Plots subpackage
-├── tests/                  # Pure Python test files (unchanged)
+├── src/                    # Python source files
+├── tests/                  # Pure Python test files
 ├── config/                 # Configuration files
-│   └── config.ini
-├── cython/                 # Compiled extension modules
-│   └── *.so/*.pyd         # Compiled modules (after build)
+├── cython/                 # Compiled extension modules (generated after build)
+│   ├── __init__.py
+│   ├── config/config.so
+│   ├── main/main.so
+│   ├── ...
 ├── setup_cython.py        # Cython build script
-├── README_cython.md       # This file
-└── CYTHON_OPTIMIZATION_REPORT.md  # Detailed compilation report
+└── ...
 ```
-
-## Compilation
-
-To compile Cython-eligible files to extension modules:
-
-```bash
-python setup_cython.py build_ext --inplace
-```
-
-This will:
-1. Compile all Cython-eligible Python files to `.so` extensions
-2. Place compiled modules in the `src/` directory (overwriting .py files)
-3. Maintain Python compatibility
 
 ## Usage
 
-After compilation, the modules can be imported:
+### Using Python Source Files (Recommended)
+
+For regular Python code, import directly from the source files in `src/`:
 
 ```python
-import src.config
-import src.main
+from src.config import GeneralConfig, globalState
+from src.main import run_tests_in_directory
 from src.specific_modules import TestReader
 from src.labtools.DataReceiver import LiveDataReader
-from src.labtools.analysis import DataAnalysis
+from src.labtools.analysis import DataAnalysis, View
+from src.labtools.utils import dynamic_import
 ```
 
-The compiled extensions take precedence over pure Python modules. If compiled modules are not available, the project will fall back to pure Python.
+### About Compiled Extensions
+
+The compiled extensions in `cython/` provide:
+- **Faster execution** for numerical/computationally intensive code
+- **Binary compatibility** across Python versions (when recompiled)
+- **Performance optimization** for CPU-bound operations
+
+However, for typical Python applications:
+- The source files in `src/` work correctly
+- The compiled extensions are optional
+- Import from `src/` ensures consistent behavior
 
 ## Files Compiled Successfully (24 modules)
 
@@ -87,7 +76,6 @@ The compiled extensions take precedence over pure Python modules. If compiled mo
 - `labtools.scpi_instrument` - SCPI instrument base class
 - `labtools._logging` - Logging module
 - `labtools.MainLoopHandler` - Main loop handler
-- `labtools.utils` - Utility functions
 
 ### Labtools GUI Subpackage
 - `labtools.GUI.binding` - GUI binding system
@@ -128,13 +116,7 @@ class NumericalValueInput[T: int | float](LabelledWidget):
 
 **Reason:** Cython does not support PEP 695 type parameters.
 
-**Fix:** Replace with traditional typing:
-```python
-from typing import TypeVar, Generic
-T = TypeVar("T", bound=(int, float))
-
-class NumericalValueInput(LabelledWidget, Generic[T]):
-```
+**Fix:** Replace with traditional typing.
 
 ### 3. labtools.data_management.local_storage
 ```python
@@ -158,26 +140,7 @@ See `CYTHON_OPTIMIZATION_REPORT.md` for detailed recommendations and estimated e
 
 ## Test Files (18 modules - unchanged)
 
-The following test files remain as pure Python:
-- `tests/__init__.py`
-- `tests/dummy_classes.py`
-- `tests/utils.py`
-- `tests/config.ini`
-- `tests/unittests/__init__.py`
-- `tests/unittests/GUI/__init__.py`
-- `tests/unittests/GUI/test_mainGUI.py`
-- `tests/unittests/GUI/test_objects.py`
-- `tests/unittests/GUI/test_parameters.py`
-- `tests/unittests/test_DataReceiver.py`
-- `tests/unittests/test_analysis.py`
-- `tests/unittests/test_binding.py`
-- `tests/unittests/test_data_flow.py`
-- `tests/unittests/test_measurement_procedure.py`
-- `tests/unittests/test_utils.py`
-- `tests/workflows/__init__.py`
-- `tests/workflows/test_ui_workflows.py`
-
-All test files are untouched and continue to run without modification.
+All test files remain as pure Python in `tests/` and continue to run without modification.
 
 ## Dependencies
 
@@ -204,7 +167,8 @@ pip install numpy PySide6 pyvisa pyqtgraph scipy colorama cython setuptools
 ### Step 1 (Completed)
 - ✅ Set up compilation infrastructure
 - ✅ Reorganize project structure
-- ✅ Compile all Cython-eligible files
+- ✅ Compile Cython-eligible files
+- ✅ Place compiled modules in separate `cython/` directory
 - ✅ Document files needing improvement
 
 ### Step 2 (Future)
@@ -227,29 +191,20 @@ To build for installation (creates wheel):
 python setup_cython.py bdist_wheel
 ```
 
+## Build Artifacts Location
+
+- **Compiled extensions:** `cython/` directory
+- **C source files:** `build/*.c` (in build directory)
+- **Build output:** `build/` directory (can be safely ignored by git)
+
 ## Troubleshooting
 
-### Compilation fails for a specific module
-
-If a module fails to compile due to PEP 695 syntax, see the "Files NOT Compiled" section above for the fix.
-
-### Runtime errors after compilation
+### Import errors
 
 If you encounter import errors:
 1. Ensure the `src/` directory is in the Python path
 2. Check that all dependencies are installed
-3. Verify that the compiled modules are being imported correctly
-
-### Using pure Python only
-
-To use pure Python without compiled extensions:
-
-```bash
-# Remove compiled extensions
-rm -f src/*.so src/labtools/*.so src/labtools/GUI/*.so src/labtools/plots/*.so
-
-# The project will automatically use pure Python modules
-```
+3. Import directly from source files: `from src.module import ...`
 
 ## License
 
