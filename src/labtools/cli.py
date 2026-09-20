@@ -3,6 +3,7 @@ import argparse
 import os
 from pathlib import Path
 import shutil
+from importlib.resources import files, as_file
 
 # Code to place in the main.py file
 CODE_MAIN_PY = """
@@ -30,7 +31,11 @@ if __name__ == "__main__":
 """
 
 
-def project_init(path: str | Path = "", desc: str | None = None):
+def project_init(
+    path: str | Path = "",
+    desc: str | None = None,
+    source_files: str | None = None,
+):
     """Initialize a project in the current working directory"""
 
     def create_file(path: Path, content: str):
@@ -45,6 +50,15 @@ def project_init(path: str | Path = "", desc: str | None = None):
     if not isinstance(path, Path):
         path = Path(path)
 
+    if source_files is None:
+        # Data folder of the package - where are stored all the pre-written files
+        resource = files(source_files)
+
+        with as_file(resource) as p:
+            data_folder = Path(p)
+    else:
+        data_folder = Path(source_files)
+
     # Create the main file
     main_path = path / "main.py"
     data = CODE_MAIN_PY.replace("!!DESC!!", desc)
@@ -52,8 +66,21 @@ def project_init(path: str | Path = "", desc: str | None = None):
 
     # Create the config file
     config_file = path / "config.ini"
-    config_source = "config.ini"
-    shutil.copyfile(config_source, config_file)
+    content = data_folder / "config.ini"
+    create_file(config_file, content.read_text())
+
+    code_folder = path / "src"
+    code_folder.mkdir(exist_ok=True, parents=True)
+    # Copy all example python files in an 'src/' folder
+    for f in os.listdir(data_folder):
+        p = data_folder / Path(f)
+        if p.suffix == ".py":
+            shutil.copyfile(p, code_folder / f)
+
+    # Create the tests directory and set an empty __init__.py
+    test_dir = path / "tests"
+    test_dir.mkdir(exist_ok=True)
+    create_file(test_dir / "__init__.py", "")
 
 
 def main():

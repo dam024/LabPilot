@@ -121,6 +121,26 @@ start_parser.add_argument(
     help="Use data on disk to simulate the instruments being connected",
 )
 
+# Check parser
+check_parser = subparsers.add_parser(
+    "check", help="Check that the configuration will correctly launch the application"
+)
+
+check_parser.add_argument(
+    "-c",
+    "--config",
+    type=str,
+    required=True,
+    help="Location of the configuration file to check",
+)
+
+check_parser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    help="Indicates if all the informations should be printed even if the check successful",
+)
+
 # Parse the arguments
 args = parser.parse_args()
 
@@ -174,6 +194,7 @@ if args.command == "start":
 ## Importing project modules
 from labtools.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
 from labtools.GUI.mainGUI import MainGUILoop
+from labtools._tools.checks import checks
 
 
 def main():
@@ -188,6 +209,9 @@ def main():
         # Run unit tests
         run_tests_in_directory(os.path.join(os.getcwd(), "tests"), args.test_module)
     # Other commands
+    elif args.command == "check":
+        # Run the checks
+        checks(args.config, args.verbose)
     else:
         config.generalConfig.read(args.config)
         logger.config_logger(config.generalConfig)

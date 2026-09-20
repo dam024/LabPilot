@@ -53,6 +53,7 @@
 from __future__ import annotations
 from abc import abstractmethod
 import functools
+from types import ModuleType
 from typing import TYPE_CHECKING, Callable, Any, List, Type
 import numpy as np
 from PySide6.QtWidgets import QWidget
@@ -66,6 +67,7 @@ import labtools.DataReceiver as dr
 import labtools.plots.plots as plots
 from labtools.GUI.parameters import GUIParametrable, GUIParameter
 from labtools import globalState
+import labtools._tools.dynamic_imports as tools
 
 if TYPE_CHECKING:
     import labtools.GUI.mainGUI as mainGUI
@@ -365,7 +367,7 @@ class DataAnalysis(GUIParametrable):
             # Loads the class
             # print(module_str, reader.c, reader.name)
 
-            r: Type[Any] = utils.dynamic_obj_import(module_str, reader.c)
+            r: Type[Any] = tools.dynamic_obj_import(module_str, reader.c)
             if not issubclass(r, dr.LiveDataReader):
                 raise RuntimeError(
                     f"Cannot use the `reader` decorator property if the return type is not of type `LiveDataReader`. Property `{name}` of class `{self.__class__.__name__}`"
@@ -554,7 +556,7 @@ class DataAnalysis(GUIParametrable):
 # 5. refresh_plots() updates plots with new data
 
 
-class View(GUIParametrable):  # type: ignore  # (utils.AbstractProperties)
+class View(GUIParametrable, tools.IgnorableClass):
     """
     Base class for measurement views that define data analysis components.
 

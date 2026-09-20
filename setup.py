@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
+from setuptools.command.build_py import build_py
 from Cython.Build import cythonize
+from pathlib import Path
+import shutil
 
 extensions = cythonize(
     "src/labtools/**/*.pyx",
@@ -10,13 +13,31 @@ extensions = cythonize(
 )
 
 
+class BuildPy(build_py):
+    def run(self):
+        super().run()
+
+        # Copy the test files
+        files = ["views.py", "readers.py", "analysis.py", "config.ini"]
+        src = Path("src")
+
+        for f in files:
+            path = src / f
+
+            d = Path(self.build_lib) / "labtools_data"
+            d.mkdir(exist_ok=True)
+            dst = d / f
+
+            shutil.copyfile(path, dst)
+
+
 setup(
     name="labtools",
     version="0.1.1",
     package_dir={"": "src"},
     packages=find_packages("src"),
     package_data={
-        "labtools": ["config.ini"],
+        ".": ["views.py"],
     },
     install_requires=[
         "colorama>=0.4.0",
@@ -46,4 +67,5 @@ setup(
             "labtools=labtools.cli:main",
         ],
     },
+    cmdclass={"build_py": BuildPy},
 )

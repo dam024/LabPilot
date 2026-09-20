@@ -8,53 +8,14 @@ import numpy as np
 import threading
 import os
 
-# import matplotlib.pyplot as plt
-
-# from specific_modules import *
-
 from labtools.data_management.local_storage import LocalStorage
 from labtools.data_management.measurement_information import MeasurementInfos
-from labtools.utils import dynamic_import, list_classes_inheriting_from
 import labtools.DataReceiver as dr
 import labtools.analysis as ana
 import labtools.measurement_procedure as mp
 from labtools import logger
 from labtools import config, globalState
-
-
-def get_all_views(
-    module_location: str,
-    excluded_modules: List[str] = [],
-    exclude_ignored: bool = False,
-) -> List[ana.View]:
-    """Collect all readers available
-
-    Args:
-        module_location (str): Path to the module
-        excluded_modules (List[str], optional): ´List of modules to exclude from the inspected modules.
-        exclude_ignored (bool, optional): If True, will filter out the views having `ignore` == True from the list
-    """
-
-    # Load the module with the correct name
-    module_name = module_location.split(".")[0].replace(
-        "/", "."
-    )  # .split("/")[-1].split(".")[0]
-    # module = dynamic_import("specific_modules", module_location)
-    module = dynamic_import(module_name, module_location)
-
-    # Get all the possible objects
-    views_list = list_classes_inheriting_from(module, ana.View, True)
-
-    # For each graph module, create it and execute it
-    views: List[ana.View] = []
-    for view in views_list:
-        # Don't take into account
-        if view.__module__ not in excluded_modules and (
-            not exclude_ignored or not view.ignore
-        ):
-            views.append(view())
-
-    return views
+import labtools._tools.dynamic_imports as tools
 
 
 class AppHandler(ABC):
@@ -69,8 +30,9 @@ class AppHandler(ABC):
 
         # Get all views. By default, takes abstract classes to cause an error in case of something not correctly defined. Excludes the module where all the base classes are defined.
 
-        self.views = get_all_views(
+        self.views = tools.get_all_views(
             module_location=config.get("GENERAL", "extra_code"),
+            cls_type=ana.View,
             excluded_modules=["labtools.DataReceiver"],
             exclude_ignored=True,
         )
