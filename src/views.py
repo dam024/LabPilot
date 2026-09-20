@@ -10,7 +10,7 @@ from labtools import logger
 import labtools.analysis as ana
 import labtools.measurement_procedure as mp
 
-from analysis import ExampleAnalysis
+from src.analysis import ExampleAnalysis
 
 
 ### TODO: Declare your views. Note: with the given configuration, all views must be declared in this file.
