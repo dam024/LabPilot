@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 import sys
 import inspect
-from labtools import config
+from labtools import _config as config
 
 just_fix_windows_console()  # Initialize colorama for Windows compatibility
 

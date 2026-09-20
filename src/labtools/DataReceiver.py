@@ -3,8 +3,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 import numpy as np
-from labtools.config import generalConfig as config
-from labtools.config import globalState
+from labtools import config, globalState, logger
 import os
 import time
 import threading
@@ -18,7 +17,6 @@ from dataclasses import dataclass, fields
 import labtools.GUI.parameters as params
 from labtools.GUI.binding import Binding, CBinding, Status
 import labtools.GUI.objects as gui_obj
-from labtools import logger
 
 if TYPE_CHECKING:
     from labtools.analysis import View

@@ -2,9 +2,7 @@ from typing import Any, Type
 from rocksdict import DbClosedError, Rdict
 import os
 
-
-from labtools.config import generalConfig as config
-from labtools import logger
+from labtools import logger, config
 
 
 class LocalStorage:

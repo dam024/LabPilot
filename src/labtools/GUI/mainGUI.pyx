@@ -21,9 +21,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
-from labtools.config import globalState
-from labtools.config import generalConfig as config
-
 import labtools.analysis as ana
 import labtools.MainLoopHandler as mainLoop
 import labtools.GUI.internal_parameters as internal_params
@@ -31,7 +28,7 @@ from labtools.GUI.binding import Binding, Status, BindingSupport
 
 from labtools.GUI.objects import GUILogArea, GraphCanvas
 
-from labtools import logger
+from labtools import logger, config, globalState
 from labtools.data_management.local_storage import LocalStorage
 from labtools.data_management.measurement_information import RecordingInfos
 

@@ -11,8 +11,7 @@ from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from pyqtgraph.widgets.PlotWidget import PlotItem
 
 import labtools.plots.plot_backend as pb
-from labtools import logger
-from labtools.config import generalConfig as config
+from labtools import logger, config
 
 
 _LINESTYLES = {

@@ -26,7 +26,7 @@ from labtools.DataReceiver import (
     ProcessedData,
     StreamDataReader,
 )
-from labtools.config import generalConfig as config
+from labtools import config
 
 from labtools.GUI.binding import Binding
 import tests.dummy_classes as dc

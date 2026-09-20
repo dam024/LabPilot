@@ -54,8 +54,7 @@ from PySide6.QtCore import QObject, Signal
 from labtools.data_management.local_storage import LocalStorage
 from labtools.utils import threadSafe
 
-from labtools.config import generalConfig as config
-from labtools import logger
+from labtools import logger, config
 
 if TYPE_CHECKING:
     import labtools.GUI.mainGUI as mainGUI

@@ -3,7 +3,7 @@ import shutil
 from typing import Any, Dict, List, Tuple
 from pathlib import Path
 
-from labtools.config import generalConfig as config
+from labtools import config
 from labtools.GUI.binding import BindingSupport
 from labtools.data_management.local_storage import LocalStorage
 

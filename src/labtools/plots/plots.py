@@ -7,9 +7,9 @@ from typing import Iterable, Tuple, List
 import enum
 
 
-from labtools.config import generalConfig as config
-
 import labtools.plots.plot_backend as pb
+
+from labtools import logger, config
 
 if config.use_gui:
     from labtools.plots.pyqt_backend import PyQtBackend as UsePlotBackend
@@ -21,8 +21,6 @@ else:
     from labtools.plots.matplotlib_backend import (
         MatplotlibBackend as UsePlotBackend,
     )
-
-from labtools import logger
 
 
 class GraphSetData:

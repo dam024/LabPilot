@@ -24,8 +24,7 @@ import socket
 import time
 from typing import TYPE_CHECKING, Any, Optional
 
-from labtools.config import generalConfig as config
-from labtools import logger
+from labtools import logger, config
 
 
 class SCPIInstrument(ABC):

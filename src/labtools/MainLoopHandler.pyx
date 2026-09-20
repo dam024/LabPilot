@@ -19,8 +19,7 @@ import labtools.DataReceiver as dr
 import labtools.analysis as ana
 import labtools.measurement_procedure as mp
 from labtools import logger
-from labtools.config import generalConfig as config
-from labtools.config import globalState
+from labtools import config, globalState
 
 
 def get_all_views(
