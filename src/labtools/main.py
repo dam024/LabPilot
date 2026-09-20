@@ -175,7 +175,8 @@ if args.command == "start":
 from labtools.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
 from labtools.GUI.mainGUI import MainGUILoop
 
-if __name__ == "__main__":
+
+def main():
     # Test command
     if args.command == "test":
         config.generalConfig.read("tests/config.ini")
@@ -210,3 +211,7 @@ if __name__ == "__main__":
             exit()
 
         loop.start()
+
+
+if __name__ == "__main__":
+    main()
