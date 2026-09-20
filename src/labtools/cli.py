@@ -35,7 +35,8 @@ def project_init(
     path: str | Path = "",
     desc: str | None = None,
     source_files: str | None = None,
-):
+    force: bool = False,
+) -> bool:
     """Initialize a project in the current working directory"""
 
     def create_file(path: Path, content: str):
@@ -58,6 +59,11 @@ def project_init(
             data_folder = Path(p).parent / "labtools_data"
     else:
         data_folder = Path(source_files)
+
+    main_path = path / "main.py"
+
+    if not force and main_path.exists():
+        return False
 
     # Create the main file
     main_path = path / "main.py"
@@ -82,6 +88,8 @@ def project_init(
     test_dir.mkdir(exist_ok=True)
     create_file(test_dir / "__init__.py", "")
 
+    return True
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -102,15 +110,29 @@ def main():
         help="Description of the project",
     )
 
+    init_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force the initialization of the project. IMPORTANT: Use this option with care, because it will overrite files already presents and can lead to data loss",
+    )
+
     # Parse the arguments
     args = parser.parse_args()
 
     # Execute
     if args.command == "init":
         if args.description != "":
-            project_init(desc=args.description)
+            ret = project_init(desc=args.description, force=args.force)
         else:
-            project_init()
+            ret = project_init(force=args.force)
+
+        if ret:
+            print("Your project has been initialized!")
+        else:
+            print(
+                "The project has already been initialized. Consider forcing a new initialization if this is really what you want."
+            )
     else:
         print(f"Error: Unknown command `{args.command}`")
         exit()

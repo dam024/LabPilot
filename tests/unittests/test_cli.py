@@ -33,11 +33,12 @@ class TestCLI(unittest.TestCase):
         )
 
         # Initialize a project
-        project_init(
+        ret = project_init(
             desc=project_test_desc,
             path=self.project_dir,
             source_files=source_destination,
         )
+        self.assertTrue(ret)
 
         # Check that main.py exists
         main_path = self.project_dir / "main.py"
@@ -60,6 +61,7 @@ class TestCLI(unittest.TestCase):
             capture_output=True,
             text=True,
         )
+
         self.assertEqual(result.stdout, "")
         self.assertEqual(result.stderr, "")
 
@@ -73,3 +75,39 @@ class TestCLI(unittest.TestCase):
 
         self.assertIn("NO TESTS RAN", result.stderr)
         self.assertEqual(result.stdout, "")
+
+    def test_init_twice(self):
+        """Test that if I try to initialize the project twice, it will throw an error"""
+
+        project_test_desc = "Description of a test project"
+        # Takes into account the normal installation (files in 'labtools_data/') and the editable installation (files in 'src/')
+        source_destination = (
+            "src"
+            if not (Path(labtools.__file__).parent / "labtools_data").exists()
+            else None
+        )
+
+        # Initialize a project
+        ret = project_init(
+            desc=project_test_desc,
+            path=self.project_dir,
+            source_files=source_destination,
+        )
+        self.assertTrue(ret)
+
+        # Initilize a 2nd time
+        ret = project_init(
+            desc=project_test_desc,
+            path=self.project_dir,
+            source_files=source_destination,
+        )
+        self.assertFalse(ret)
+
+        # Force the installation
+        ret = project_init(
+            desc=project_test_desc,
+            path=self.project_dir,
+            source_files=source_destination,
+            force=True,
+        )
+        self.assertTrue(ret)

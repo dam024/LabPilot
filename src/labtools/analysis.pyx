@@ -54,7 +54,7 @@ from __future__ import annotations
 from abc import abstractmethod
 import functools
 from types import ModuleType
-from typing import TYPE_CHECKING, Callable, Any, List, Type
+from typing import TYPE_CHECKING, Callable, Any, Dict, List, Type
 import numpy as np
 from PySide6.QtWidgets import QWidget
 
@@ -830,6 +830,33 @@ class View(GUIParametrable, tools.IgnorableClass):
             if analysis.has_reader(reader):
                 return True
         return False
+
+    @classmethod
+    def get_all_readers_dependencies(
+        cls, views: "List[View]"
+    ) -> List[Type[dr.LiveDataReader]]:
+        """
+        Returns all the readers found to be a dependency of at least one of the given view
+
+        Args:
+            views (List[View]): List of views to get the reader dependencies from
+
+        Raises:
+            AttributeError: If two views have the same name or are the same
+        """
+        # Get the readers dependencies. Additionnally, check that all readers have a unique name
+        readers_names: Dict[str, View] = {}
+        readers_types: List[Type[dr.LiveDataReader]] = []
+        for view in views:
+            view.add_readers_dependencies(readers_types)
+            if view.name not in readers_names:
+                readers_names[view.name] = view
+            else:
+                raise AttributeError(
+                    f"Subclasses of `{View.__module__}.View` must have a unique name. `{readers_names[view.name].__class__.__module__}.{readers_names[view.name].__class__.__name__}` and `{view.__class__.__module__}.{view.__class__.__name__}` have the same name '{view.name}'"
+                )
+
+        return readers_types
 
     def refresh_plots(self):
         """

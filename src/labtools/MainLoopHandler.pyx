@@ -62,16 +62,7 @@ class AppHandler(ABC):
         """Set up the views so that the readers are handled globally"""
 
         # Get the readers dependencies. Additionnally, check that all readers have a unique name
-        readers_names: Dict[str, ana.View] = {}
-        readers_types: List[Type[dr.LiveDataReader]] = []
-        for view in self.views:
-            view.add_readers_dependencies(readers_types)
-            if view.name not in readers_names:
-                readers_names[view.name] = view
-            else:
-                raise AttributeError(
-                    f"Subclasses of `{ana.View.__module__}.View` must have a unique name. `{readers_names[view.name].__class__.__module__}.{readers_names[view.name].__class__.__name__}` and `{view.__class__.__module__}.{view.__class__.__name__}` have the same name '{view.name}'"
-                )
+        readers_types = ana.View.get_all_readers_dependencies(self.views)
 
         # Instantiate
         self.readers = [reader() for reader in readers_types]
