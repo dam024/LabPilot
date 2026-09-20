@@ -21,8 +21,8 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
-from config import globalState
-from config import generalConfig as config
+from labtools.config import globalState
+from labtools.config import generalConfig as config
 
 import labtools.analysis as ana
 import labtools.MainLoopHandler as mainLoop

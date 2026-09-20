@@ -8,8 +8,8 @@ import numpy as np
 import os
 from PySide6.QtWidgets import QWidget
 
-from config import generalConfig as config
-from config import globalState
+from labtools.config import generalConfig as config
+from labtools.config import globalState
 from labtools import logger
 import labtools.analysis as ana
 from labtools.GUI.parameters import GUIParameter

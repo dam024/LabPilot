@@ -24,7 +24,7 @@ import socket
 import time
 from typing import TYPE_CHECKING, Any, Optional
 
-from config import generalConfig as config
+from labtools.config import generalConfig as config
 from labtools import logger
 
 

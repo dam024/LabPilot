@@ -3,7 +3,7 @@ from rocksdict import DbClosedError, Rdict
 import os
 
 
-from config import generalConfig as config
+from labtools.config import generalConfig as config
 from labtools import logger
 
 

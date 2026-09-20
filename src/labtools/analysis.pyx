@@ -65,7 +65,7 @@ import labtools.utils as utils
 import labtools.DataReceiver as dr
 import labtools.plots.plots as plots
 from labtools.GUI.parameters import GUIParametrable, GUIParameter
-from config import globalState
+from labtools.config import globalState
 
 if TYPE_CHECKING:
     import labtools.GUI.mainGUI as mainGUI

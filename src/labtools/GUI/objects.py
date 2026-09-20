@@ -38,7 +38,7 @@ from PySide6.QtWidgets import (
 from labtools.GUI.binding import CBinding
 import labtools.plots.plots as plots
 from labtools.utils import threadSafe
-from config import generalConfig as config
+from labtools.config import generalConfig as config
 
 
 T = TypeVar("T", bound=QWidget)

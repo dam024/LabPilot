@@ -12,7 +12,7 @@ from pyqtgraph.widgets.PlotWidget import PlotItem
 
 import labtools.plots.plot_backend as pb
 from labtools import logger
-from config import generalConfig as config
+from labtools.config import generalConfig as config
 
 
 _LINESTYLES = {

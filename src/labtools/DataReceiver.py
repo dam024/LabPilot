@@ -3,8 +3,8 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 import numpy as np
-from config import generalConfig as config
-from config import globalState
+from labtools.config import generalConfig as config
+from labtools.config import globalState
 import os
 import time
 import threading

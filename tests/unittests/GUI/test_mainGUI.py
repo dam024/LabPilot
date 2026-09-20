@@ -9,7 +9,7 @@ from labtools.GUI.mainGUI import (
 )
 from tests.utils import UpdatableConfigTest
 
-from config import generalConfig as config
+from labtools.config import generalConfig as config
 
 
 class TestGUILogHandler(UpdatableConfigTest):

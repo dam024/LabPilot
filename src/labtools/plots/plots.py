@@ -7,7 +7,7 @@ from typing import Iterable, Tuple, List
 import enum
 
 
-from config import generalConfig as config
+from labtools.config import generalConfig as config
 
 import labtools.plots.plot_backend as pb
 

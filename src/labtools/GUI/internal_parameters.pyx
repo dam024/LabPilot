@@ -8,8 +8,8 @@ import traceback
 from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget, QLabel
 
 from labtools import logger
-from config import generalConfig as config
-from config import globalState
+from labtools.config import generalConfig as config
+from labtools.config import globalState
 
 from labtools.GUI.binding import CBinding, SavedBinding, Status
 from labtools.GUI.parameters import GUIParametrable, GUIParameter

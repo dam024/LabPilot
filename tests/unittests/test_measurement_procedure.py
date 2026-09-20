@@ -842,8 +842,6 @@ class TestMeasurementProcedureSimulationMode(du.UpdatableConfigTest):
 
     def setUp(self) -> None:
         """Set up for simulation mode tests."""
-        from config import globalState
-
         self.temp_dir = tempfile.mkdtemp()
         self.procedure = TestDataMeasurementFolder()
         super().setUp()

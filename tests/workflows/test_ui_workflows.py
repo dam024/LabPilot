@@ -29,7 +29,7 @@ import unittest
 import time
 
 from PySide6.QtWidgets import QApplication
-from config import generalConfig as config
+from labtools.config import generalConfig as config
 from labtools.GUI.mainGUI import MainGUILoop, MainWindow
 from labtools import logger
 import tests.utils as tu

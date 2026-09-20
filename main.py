@@ -1,6 +1,6 @@
 from __future__ import annotations
 import argparse
-import config
+import labtools.config as config
 import unittest
 import os
 from labtools import logger, utils
