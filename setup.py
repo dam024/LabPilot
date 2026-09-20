@@ -12,7 +12,7 @@ extensions = cythonize(
 
 setup(
     name="labtools",
-    version="0.1.0",
+    version="0.1.1",
     package_dir={"": "src"},
     packages=find_packages("src"),
     install_requires=[
