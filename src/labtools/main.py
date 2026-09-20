@@ -38,7 +38,8 @@ from labtools import logger, utils
 
 def main():
     # ==== ARGUMENT PARSER  ========
-    parser = argparse.ArgumentParser(description="SNAPSHOT Launcher")
+    desc = os.environ.get("LABTOOLS_PROJECT_DESCRIPTION")
+    parser = argparse.ArgumentParser(description=desc)
 
     subparsers = parser.add_subparsers(dest="command", help="Specific commands: ")
 

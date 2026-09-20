@@ -94,13 +94,23 @@ def main():
     init_parser = subparsers.add_parser(
         "init", help="Initialize a project in the current working directory"
     )
+    init_parser.add_argument(
+        "-d",
+        "--description",
+        required=False,
+        type=str,
+        help="Description of the project",
+    )
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Execute
     if args.command == "init":
-        project_init()
+        if args.description != "":
+            project_init(desc=args.description)
+        else:
+            project_init()
     else:
         print(f"Error: Unknown command `{args.command}`")
         exit()

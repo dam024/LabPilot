@@ -4,7 +4,7 @@ import os
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault("LABTOOLS_PROJECT_NAME", "Test of the LabTools module")
+    os.environ.setdefault("LABTOOLS_PROJECT_DESCRIPTION", "Test of the LabTools module")
     try:
         import labtools
     except ImportError as exc:
