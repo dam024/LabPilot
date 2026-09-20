@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 
 
-class TestCLI(unittest.TestCase):
+class TestInstall(unittest.TestCase):
     def setUp(self) -> None:
         # Prepare a directory for the tests
         self.project_dir = Path("tests/.install_test")
@@ -14,8 +14,8 @@ class TestCLI(unittest.TestCase):
         return super().setUp()
 
     def tearDown(self) -> None:
-        # if self.project_dir.exists():
-        #    shutil.rmtree(self.project_dir)
+        if self.project_dir.exists():
+            shutil.rmtree(self.project_dir)
         return super().tearDown()
 
     def test_install(self):
