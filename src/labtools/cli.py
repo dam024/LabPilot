@@ -52,10 +52,10 @@ def project_init(
 
     if source_files is None:
         # Data folder of the package - where are stored all the pre-written files
-        resource = files("labtools_data")
+        resource = files("labtools")
 
         with as_file(resource) as p:
-            data_folder = Path(p)
+            data_folder = Path(p).parent / "labtools_data"
     else:
         data_folder = Path(source_files)
 
