@@ -36,168 +36,164 @@ from labtools import logger, utils
 #   - When I subclass a Reader, its Bindings must be shared globally with the superclasses. The reason for this is that it represents the same instrument, but with a different behavior
 
 
-# ==== ARGUMENT PARSER  ========
-parser = argparse.ArgumentParser(description="SNAPSHOT Launcher")
-
-subparsers = parser.add_subparsers(dest="command", help="Specific commands: ")
-
-# Add arguments
-
-parser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    help="Display all the informations in the console.",
-)
-
-parser.add_argument(
-    "--no_logs", action="store_true", help="Prevent to write the logs in a file"
-)
-
-
-# Run parser
-run_parser = subparsers.add_parser(
-    "run", help="Run the main program as live data reading"
-)
-
-run_parser.add_argument(
-    "-c",
-    "--config",
-    type=str,
-    required=True,
-    help="Location of the configuration file to use.",
-)
-
-# Plot parser
-plot_parser = subparsers.add_parser(
-    "plots", help="Generate all the plots from the last generated data"
-)
-
-plot_parser.add_argument(
-    "-c",
-    "--config",
-    type=str,
-    required=True,
-    help="Location of the configuration file to use.",
-)
-
-
-# Test parser
-test_parser = subparsers.add_parser("test", help="Execute unit tests")
-
-test_parser.add_argument(
-    "-d",
-    "--data",
-    action="store_true",
-    help="Prevent the temporary data to be deleted at the end of the test pipline",
-)
-
-test_parser.add_argument(
-    "test_module",
-    nargs="?",
-    help="""Optional test string to allow working on a single test function or test class
-    Example: 
-        If I want to execute only the `test_load` method of the `DatabaseTest` class located at ./tests/database_test.py, the value of this variable will be `tests.database_tests.DatabaseTest.test_load`
-    """,
-)
-
-# Start parser
-start_parser = subparsers.add_parser(
-    "start", help="Start the main GUI of the application"
-)
-
-start_parser.add_argument(
-    "-c",
-    "--config",
-    type=str,
-    required=True,
-    help="Location of the configuration file to use.",
-)
-
-start_parser.add_argument(
-    "-d",
-    "--disk_data",
-    action="store_true",
-    help="Use data on disk to simulate the instruments being connected",
-)
-
-# Check parser
-check_parser = subparsers.add_parser(
-    "check", help="Check that the configuration will correctly launch the application"
-)
-
-check_parser.add_argument(
-    "-c",
-    "--config",
-    type=str,
-    required=True,
-    help="Location of the configuration file to check",
-)
-
-check_parser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    help="Indicates if all the informations should be printed even if the check successful",
-)
-
-# Parse the arguments
-args = parser.parse_args()
-
-
-def run_tests_in_directory(directory, module_name=None):
-    """
-    Discover and run all unit tests within a specified directory.
-    Optionally run tests from a specific Python module or subdirectory.
-
-    Args:
-        directory (str): The path to the directory containing test files.
-        module_name (str, optional): The name of the Python module containing tests to run. If None, runs all tests in the directory.
-                                   Use either a full module path (e.g., "tests.unittests") or a directory path.
-    """
-
-    # Create a test loader
-    loader = unittest.TestLoader()
-
-    if module_name:
-        # If module_name contains dots, treat it as a package/module path
-        # Split into base and subpackage: tests.unittests -> tests + /unittests
-        if "." in module_name:
-            base_module, subpackage = module_name.split(".", 1)
-            full_path = os.path.join(directory, subpackage)
-            if os.path.isdir(full_path):
-                # It's a package directory - discover tests within it
-                suite = loader.discover(full_path, pattern="*.py")
-            else:
-                # Module path doesn't exist as directory - try loadTestsFromName
-                suite = loader.loadTestsFromName(module_name)
-        else:
-            # Directory path - discover tests in that directory
-            suite = loader.discover(directory, pattern="*.py")
-    else:
-        # Discover all Python files that start with 'test' in the given directory
-        suite = loader.discover(directory, pattern="*.py")
-
-    # Create a test runner and run the test suite
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
-
-
-#####################  PROGRAM START   ##################
-
-## Preparing the configuration
-if args.command == "start":
-    config.generalConfig.use_gui = True
-    if args.disk_data:
-        config.generalConfig.simulation = True
-
-## Importing project modules
-from labtools.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
-from labtools.GUI.mainGUI import MainGUILoop
-from labtools._tools.checks import checks
-
-
 def main():
+    # ==== ARGUMENT PARSER  ========
+    parser = argparse.ArgumentParser(description="SNAPSHOT Launcher")
+
+    subparsers = parser.add_subparsers(dest="command", help="Specific commands: ")
+
+    # Add arguments
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Display all the informations in the console.",
+    )
+
+    parser.add_argument(
+        "--no_logs", action="store_true", help="Prevent to write the logs in a file"
+    )
+
+    # Run parser
+    run_parser = subparsers.add_parser(
+        "run", help="Run the main program as live data reading"
+    )
+
+    run_parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Location of the configuration file to use.",
+    )
+
+    # Plot parser
+    plot_parser = subparsers.add_parser(
+        "plots", help="Generate all the plots from the last generated data"
+    )
+
+    plot_parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Location of the configuration file to use.",
+    )
+
+    # Test parser
+    test_parser = subparsers.add_parser("test", help="Execute unit tests")
+
+    test_parser.add_argument(
+        "-d",
+        "--data",
+        action="store_true",
+        help="Prevent the temporary data to be deleted at the end of the test pipline",
+    )
+
+    test_parser.add_argument(
+        "test_module",
+        nargs="?",
+        help="""Optional test string to allow working on a single test function or test class
+        Example: 
+            If I want to execute only the `test_load` method of the `DatabaseTest` class located at ./tests/database_test.py, the value of this variable will be `tests.database_tests.DatabaseTest.test_load`
+        """,
+    )
+
+    # Start parser
+    start_parser = subparsers.add_parser(
+        "start", help="Start the main GUI of the application"
+    )
+
+    start_parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Location of the configuration file to use.",
+    )
+
+    start_parser.add_argument(
+        "-d",
+        "--disk_data",
+        action="store_true",
+        help="Use data on disk to simulate the instruments being connected",
+    )
+
+    # Check parser
+    check_parser = subparsers.add_parser(
+        "check",
+        help="Check that the configuration will correctly launch the application",
+    )
+
+    check_parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        required=True,
+        help="Location of the configuration file to check",
+    )
+
+    check_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Indicates if all the informations should be printed even if the check successful",
+    )
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    def run_tests_in_directory(directory, module_name=None):
+        """
+        Discover and run all unit tests within a specified directory.
+        Optionally run tests from a specific Python module or subdirectory.
+
+        Args:
+            directory (str): The path to the directory containing test files.
+            module_name (str, optional): The name of the Python module containing tests to run. If None, runs all tests in the directory.
+                                       Use either a full module path (e.g., "tests.unittests") or a directory path.
+        """
+
+        # Create a test loader
+        loader = unittest.TestLoader()
+
+        if module_name:
+            # If module_name contains dots, treat it as a package/module path
+            # Split into base and subpackage: tests.unittests -> tests + /unittests
+            if "." in module_name:
+                base_module, subpackage = module_name.split(".", 1)
+                full_path = os.path.join(directory, subpackage)
+                if os.path.isdir(full_path):
+                    # It's a package directory - discover tests within it
+                    suite = loader.discover(full_path, pattern="*.py")
+                else:
+                    # Module path doesn't exist as directory - try loadTestsFromName
+                    suite = loader.loadTestsFromName(module_name)
+            else:
+                # Directory path - discover tests in that directory
+                suite = loader.discover(directory, pattern="*.py")
+        else:
+            # Discover all Python files that start with 'test' in the given directory
+            suite = loader.discover(directory, pattern="*.py")
+
+        # Create a test runner and run the test suite
+        runner = unittest.TextTestRunner()
+        runner.run(suite)
+
+    #####################  PROGRAM START   ##################
+
+    ## Preparing the configuration
+    if args.command == "start":
+        config.generalConfig.use_gui = True
+        if args.disk_data:
+            config.generalConfig.simulation = True
+
+    ## Importing project modules
+    from labtools.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
+    from labtools.GUI.mainGUI import MainGUILoop
+    from labtools._tools.checks import checks
+
     # Test command
     if args.command == "test":
         config.generalConfig.read("tests/config.ini")
