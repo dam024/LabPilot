@@ -5,6 +5,8 @@ from pathlib import Path
 import shutil
 from importlib.resources import files, as_file
 
+from labtools._tools.updates import get_version, update
+
 # Code to place in the main.py file
 CODE_MAIN_PY = """
 #!/usr/bin/env python
@@ -117,6 +119,19 @@ def main():
         help="Force the initialization of the project. IMPORTANT: Use this option with care, because it will overrite files already presents and can lead to data loss",
     )
 
+    # Update parser
+    update_parser = subparsers.add_parser(
+        "update", help="Automatically update `LabTools` to its latest version"
+    )
+    update_parser.add_argument(
+        "-f", "--force", action="store_true", help="Skip the validation step"
+    )
+
+    # Version parser
+    version_parser = subparsers.add_parser(
+        "version", help="Show the current version of LabTools"
+    )
+
     # Parse the arguments
     args = parser.parse_args()
 
@@ -133,6 +148,16 @@ def main():
             print(
                 "The project has already been initialized. Consider forcing a new initialization if this is really what you want."
             )
+    elif args.command == "update":
+        if not args.force:
+            inp = ""
+            while inp.lower() not in ["n", "y"]:
+                inp = input("Do you want to proceed to the update? [y/N]")
+
+        update()
+
+    elif args.command == "version":
+        print(get_version())
     else:
         print(f"Error: Unknown command `{args.command}`")
         exit()

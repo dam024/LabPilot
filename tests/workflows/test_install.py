@@ -4,6 +4,10 @@ import shutil
 import unittest
 from pathlib import Path
 import subprocess
+import re
+
+import labtools
+from labtools._tools import checks
 
 
 class TestInstall(unittest.TestCase):
@@ -95,3 +99,22 @@ class TestInstall(unittest.TestCase):
 
         self.assertIn("NO TESTS RAN", result.stderr)
         self.assertEqual(result.stdout, "")
+
+    def test_version(self):
+        # Get the version from pip show
+        result = subprocess.run(
+            ["pip", "show", "labtools"],
+            cwd=self.project_dir,
+            capture_output=True,
+            text=True,
+        )
+        values = result.stdout
+
+        # Now, extract the version number
+        rstl = re.search("Version: (.*)", values)
+        if rstl is not None:
+            version_number = rstl.group(1)
+        else:
+            version_number = None
+
+        self.assertEqual(labtools.get_version(), version_number)
