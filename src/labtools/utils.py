@@ -32,7 +32,7 @@ def resample(arr: np.ndarray, every: int):
 
     new_shape = (*arr.shape[:-1], end_nb, every)
 
-    r = arr[*s].reshape(new_shape)
+    r = arr[tuple(s)].reshape(new_shape)
     m = np.mean(r, axis=-1)
 
     if stop < arr.shape[-1]:
@@ -40,7 +40,10 @@ def resample(arr: np.ndarray, every: int):
         s_m = s.copy()
         s_m[-1] = -1
 
-        m[*s_m] = (np.sum(arr[*s], axis=-1) + every * m[*s_m]) / (
+        # m[*s_m] = (np.sum(arr[*s], axis=-1) + every * m[*s_m]) / (
+        #    arr.shape[-1] - stop + every
+        # )
+        m[tuple(s_m)] = (np.sum(arr[tuple(s)], axis=-1) + every * m[tuple(s_m)]) / (
             arr.shape[-1] - stop + every
         )
 

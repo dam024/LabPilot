@@ -1,11 +1,15 @@
-from setuptools import setup, find_packages
+from setuptools import Extension, setup, find_packages
 from setuptools.command.build_py import build_py
 from Cython.Build import cythonize
 from pathlib import Path
 import shutil
 
 extensions = cythonize(
-    "src/labtools/**/*.pyx",
+    [
+        Extension("*", ["src/labtools/**/*.pyx"]),
+        Extension("DataReceiver", ["src/labtools/DataReceiver.py"]),
+        Extension("utils", ["src/labtools/utils.py"]),
+    ],
     build_dir="build/cython",
     compiler_directives={
         "language_level": "3",
@@ -57,10 +61,7 @@ setup(
         },
     },
     extras_require={
-        "dev": [
-            "setuptools",
-            "cython",
-        ],
+        "dev": ["setuptools", "cython", "psutil"],
     },
     entry_points={
         "console_scripts": [
