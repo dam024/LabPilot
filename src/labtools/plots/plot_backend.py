@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABC, abstractproperty
 import os
 import re
-from typing import List, Literal
+from typing import List, Literal, TypeVar, Generic
 from PySide6.QtWidgets import QWidget
 import numpy as np
 import numpy.typing as npt
@@ -31,7 +31,11 @@ class MissingAxeError(Exception):
     pass
 
 
-class PlotBackend[Figure, Axes](ABC):
+Figure = TypeVar("Figure")
+Axes = TypeVar("Axes")
+
+
+class PlotBackend(ABC, Generic[Figure, Axes]):
     _lines: List[PlotContent] = []
 
     @property
@@ -40,7 +44,7 @@ class PlotBackend[Figure, Axes](ABC):
         return "PDF (*.pdf);;PNG (*.png)"
 
     @property
-    def prefered_extensions(self) -> str:
+    def prefered_extensions(self) -> List[str]:
         """List all valid extensions that can be used for the plots"""
         return re.findall(r"\*\.(\w+)", self.prefered_export_format)
 

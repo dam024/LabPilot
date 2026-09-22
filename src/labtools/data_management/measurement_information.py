@@ -48,7 +48,7 @@ class ParametrizedInfos(Infos):
         full_key = self._build_key(owner, key)
         self._values["parameters"][full_key] = value
 
-    def get_parameter[T](self, owner: object | Type, key: str) -> T:
+    def get_parameter(self, owner: object | Type, key: str) -> object:
         full_key = self._build_key(owner, key)
         return self._values["parameters"][full_key]
 

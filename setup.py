@@ -6,13 +6,29 @@ import shutil
 
 extensions = cythonize(
     [
-        Extension("*", ["src/labtools/**/*.pyx"]),
-        Extension("DataReceiver", ["src/labtools/DataReceiver.py"]),
-        Extension("utils", ["src/labtools/utils.py"]),
+        Extension(
+            "*",
+            ["src/labtools/**/*.py"],
+            extra_compile_args=[
+                "-g",
+                "-O0",
+                # "-fsanitize=address",
+                # "-fno-omit-frame-pointer",
+            ],
+            extra_link_args=[
+                # "-fsanitize=address",
+            ],
+        ),
     ],
     build_dir="build/cython",
     compiler_directives={
         "language_level": "3",
+        "linetrace": True,
+        # "binding": True,
+        # "boundscheck": True,
+        # "wraparound": True,
+        # "initializedcheck": True,
+        # "nonecheck": True,
     },
 )
 

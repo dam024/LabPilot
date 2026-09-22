@@ -13,6 +13,7 @@ import math
 # import matplotlib as mpl
 # from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 
+import cython
 from PySide6.QtCore import Qt, Signal, QObject
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -256,7 +257,10 @@ class Switch(LabelledWidget):
         return self.switch.isChecked()
 
 
-class NumericalValueInput[T: int | float](LabelledWidget):
+T = TypeVar("T", bound=int | float)
+
+
+class NumericalValueInput(LabelledWidget, Generic[T]):
     """
     Widget to ask the user for a numerical value.
 

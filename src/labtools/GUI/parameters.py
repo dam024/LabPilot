@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 
 from abc import abstractmethod
 from copy import deepcopy
@@ -11,7 +11,7 @@ from typing import (
     TypeVar,
     override,
 )
-
+import cython
 from PySide6.QtWidgets import QWidget, QGroupBox, QVBoxLayout
 
 
@@ -20,6 +20,7 @@ import labtools.GUI.objects as objects
 
 if TYPE_CHECKING:
     from labtools.analysis import View
+from cython.cimports.labtools.utils import AbstractProperties
 from labtools.utils import AbstractProperties
 
 T = TypeVar("T")
@@ -39,8 +40,9 @@ class GUIParameter:
 # ============================================================================
 
 
+@cython.cclass
 class GUIParametrable(AbstractProperties, BindingSupport):
-    title: str
+    title: cython.unicode
 
     def __init__(self) -> None:
         super().__init__()
@@ -48,16 +50,20 @@ class GUIParametrable(AbstractProperties, BindingSupport):
 
         self._check_for_property("title", str)
 
+    @cython.ccall
     @override
     def _set_if_not_defined(self, name: str, value):
         # Add support for properties defined as `Binding`.
         if name not in self._bindings:
-            return super()._set_if_not_defined(name, value)
+            return super(GUIParametrable, self)._set_if_not_defined(name, value)
 
+    @cython.ccall
     @abstractmethod
-    def get_parameters(self, frame: QWidget, view: View | None) -> List[GUIParameter]:
+    # def get_parameters(self, frame: QWidget, view: View | None) -> List[GUIParameter]:
+    def get_parameters(self, frame: object, view: object) -> object:
         pass
 
+    @cython.ccall
     def create_group(
         self,
         frame: QWidget,
@@ -69,6 +75,7 @@ class GUIParametrable(AbstractProperties, BindingSupport):
 
         return layout
 
+    @cython.ccall
     def create_widget(self, frame: QWidget, view: View | None) -> QWidget:
         # Build the main group and its layout
         self.group_layout = self.create_group(frame)
@@ -86,5 +93,6 @@ class GUIParametrable(AbstractProperties, BindingSupport):
 
         return self.group_main
 
+    @cython.ccall
     def destroy(self) -> None:
         self.group_main.deleteLater()

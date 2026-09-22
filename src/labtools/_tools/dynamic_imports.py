@@ -1,4 +1,4 @@
-from typing import Any, List, Type
+from typing import Any, List, Type, TypeVar, TYPE_CHECKING
 
 import importlib
 import importlib.util
@@ -67,11 +67,12 @@ def dynamic_obj_import(module_name: str, component: str):
     return obj
 
 
-def list_classes_inheriting_from[
-    T
-](module: ModuleType, base_class: Type[T], take_abstract_classes: bool = False) -> List[
-    Type[T]
-]:
+T = TypeVar("T")
+
+
+def list_classes_inheriting_from(
+    module: ModuleType, base_class: Type[T], take_abstract_classes: bool = False
+) -> List[Type[T]]:
     """
     List all classes in the given module that inherit from the specified base class.
 
@@ -108,9 +109,10 @@ class IgnorableClass:
     ignore: bool
 
 
-def get_all_views[
-    T: IgnorableClass
-](
+T = TypeVar("T", bound=IgnorableClass)
+
+
+def get_all_views(
     module_location: str,
     cls_type: Type[T],
     excluded_modules: List[str] = [],

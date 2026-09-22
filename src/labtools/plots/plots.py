@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import copy
 import os
 import numpy as np
-from typing import Iterable, Tuple, List
+from typing import Iterable, Tuple, List, Generic, TypeVar
 import enum
 
 
@@ -27,7 +27,10 @@ class GraphSetData:
     pass
 
 
-class GraphSet[Data: GraphSetData](ABC):
+Data = TypeVar("Data", bound=GraphSetData)
+
+
+class GraphSet(Generic[Data], ABC):
     class AxisUpdatePolicy(enum.Enum):
 
         """This enumeration defines which method should be used while auto scaling. This can be used for all axes.

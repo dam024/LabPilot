@@ -61,7 +61,7 @@ class LocalStorage:
         full_key = self._build_key(owner, key)
         self.db[full_key] = value
 
-    def get[T](self, owner: object | Type, key: str) -> T:
+    def get(self, owner: object | Type, key: str) -> object:
         full_key = self._build_key(owner, key)
         return self.db[full_key]
 

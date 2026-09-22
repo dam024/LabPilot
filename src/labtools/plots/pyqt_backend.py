@@ -20,6 +20,7 @@ _LINESTYLES = {
     "--": Qt.PenStyle.DashLine,
     ":": Qt.PenStyle.DotLine,
     "-.": Qt.PenStyle.DashDotLine,
+    "-:": Qt.PenStyle.DashDotDotLine,
 }
 
 
@@ -83,7 +84,10 @@ class AxisItemCustom(pg.AxisItem):
         )
         self.enableAutoSIPrefix(False)
 
-    def tickStrings(self, values: list[float], scale: float, spacing: float):
+    # def tickStrings(self, values: list[float], scale: float, spacing: float):
+    def tickStrings(
+        self, values: list[float], scale: float, spacing: float | None
+    ):  # Spacing is sometimes `None`, creating segemtation faults!!!
         # This method is responsible for converting the values in tick strings.
         return super().tickStrings(values, scale, spacing)
 
@@ -105,7 +109,7 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
             }
         )
         self.ax: PlotItem = self.fig.getPlotItem()
-        self.ax.hideButtons()
+        self.ax.hideButtons()  # Hide the buttons that allow the user to reset the plot scale
         self.ax.getViewBox().disableAutoRange()
         self.ax.layout.setContentsMargins(5, 5, 50, 5)
 
@@ -192,6 +196,7 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
         update_views()
 
     def _get_axis(self, right_axis: bool):
+        """Get the `PlotItem` corresponding to the desired axis"""
         if right_axis:
             if self.ax_right is None:
                 raise pb.MissingAxeError("You haven't created any right axis yet!")
@@ -218,25 +223,6 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
         )
 
         return pen
-
-    def _apply_log_mode(self):
-        self.ax.setLogMode(
-            x=self._x_log,
-            y=self._y_log,
-        )
-
-        self._bottom_axis.setLogMode(self._x_log)
-        self._left_axis.setLogMode(self._y_log)
-
-        if self.ax_right is not None:
-            self._right_axis_item.setLogMode(self._y_log)
-
-        for entry in self.lines:
-            if isinstance(entry.item, pg.PlotDataItem):
-                entry.item.setLogMode(
-                    self._x_log,
-                    self._y_log,
-                )
 
     def _connect_text_updates_if_needed(self):
         if self._text_update_connected:
@@ -430,11 +416,6 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
             tip=lambda x, y, data: f"x={x:.2f}\ny={y:.2f}",
         )
 
-        curve.setLogMode(
-            self._x_log,
-            self._y_log,
-        )
-
         if right_axis:
             axis = self._get_axis(right_axis=True)
             axis.addItem(curve)
@@ -581,11 +562,13 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
 
     def set_xscale(self, scale: Literal["log", "linear"]):
         self._x_log = scale == "log"
-        self._apply_log_mode()
+        # self._apply_log_mode()
+        self.ax.setLogMode(x=scale == "log")
 
     def set_yscale(self, scale: Literal["log", "linear"]):
         self._y_log = scale == "log"
-        self._apply_log_mode()
+        # self._apply_log_mode()
+        self.ax.setLogMode(y=scale == "log")
 
     def set_xlim(self, x: float, y: float):
         transformed = self._transform_range_for_log(

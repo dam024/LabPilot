@@ -44,6 +44,7 @@ from typing import (
     override,
 )
 import weakref
+import cython
 
 from typing_extensions import disjoint_base
 import functools
@@ -595,6 +596,9 @@ class BindingSupport:
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
+        # @cython.cfunc
+        # @classmethod
+        # def init_subclass(cls) -> cython.void:
         """Class-level initialization.
 
         Collects all @Binding/@Status/@SavedBinding decorators from the class
@@ -648,6 +652,7 @@ class BindingSupport:
         if self.__class__.__main_instance__ is None:
             self.set_main_instance()
 
+    # @cython.ccall
     def set_main_instance(self):
         """Sets the current object to be the main instance of the class.
 
@@ -661,6 +666,7 @@ class BindingSupport:
         """
         self.__class__.__main_instance__ = self
 
+    # @cython.ccall
     @classmethod
     def get_main_instance(cls) -> Self:
         """Get the main instance of the class.
@@ -677,6 +683,7 @@ class BindingSupport:
             )
         return cls.__main_instance__
 
+    # @cython.ccall
     def _on_exit(self) -> None:
         """Cleanup and save bindings when the object is destroyed.
 
@@ -695,6 +702,7 @@ class BindingSupport:
                     value = getattr(self, name).get()
                     db.set(self, name, value)
 
+    # @cython.ccall
     @classmethod
     def save_values(cls, infos: "ParametrizedInfos") -> None:
         """Saves the values for all Bindings with auto_save=True.
@@ -722,6 +730,7 @@ class BindingSupport:
                 value = getattr(cls, name).get()
                 infos.set_parameter(cls, name, value)
 
+    # @cython.ccall
     @classmethod
     def restore_values(cls, infos: "ParametrizedInfos") -> None:
         """Restores saved values from measurement info for all bindings.
@@ -750,6 +759,7 @@ class BindingSupport:
                 # getattr(cls, name)._set(value)
                 getattr(cls, name).set_signals(value)
 
+    # @cython.ccall
     def _instantiate_bindings(self) -> None:
         """Creates all the CBinding instances for the current class.
 
@@ -781,6 +791,7 @@ class BindingSupport:
                 parent,
             )
 
+    # @cython.ccall
     def _setup(
         self,
         window: "mainGUI.MainWindow | None",
