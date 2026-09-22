@@ -1,6 +1,5 @@
 
 from labtools.utils cimport AbstractProperties
-from labtools.GUI.binding import BindingSupport
 
 cdef class GUIParametrable(AbstractProperties):
     cdef public str title

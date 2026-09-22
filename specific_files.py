@@ -64,7 +64,7 @@ class TestReader(LiveDataReader[TestData]):
         logger.info("Stop test reader...")
 
 
-class TestStreamer(StreamDataReader[TestData]):
+class TestStreamer(StreamDataReader):
     name: str = "Test Streamer"
     dirname: str = "stream_reader"
 
@@ -184,7 +184,8 @@ class TestAnalysis(ana.DataAnalysis):
 
     def refresh_plots(self):
         # Test data
-        data_reader = self.test_reader().get_data()
+        test_reader: TestReader = self.test_reader()
+        data_reader = test_reader.get_data()
         if data_reader is not None:
             self.plot_reader.set_data(data_reader.x, data_reader.y)
 

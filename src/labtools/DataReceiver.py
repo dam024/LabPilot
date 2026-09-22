@@ -15,6 +15,7 @@ import traceback
 from dataclasses import dataclass, fields
 import cython
 
+import cython.cimports.labtools.GUI.parameters as params
 import labtools.GUI.parameters as params
 from labtools.GUI.binding import Binding, CBinding, Status
 import labtools.GUI.objects as gui_obj
@@ -73,7 +74,8 @@ class ProcessedData:
 T = TypeVar("T", bound=ProcessedData)
 
 
-class LiveDataReader(Generic[T], params.GUIParametrable):
+@cython.cclass
+class LiveDataReader(params.GUIParametrable):
     # class LiveDataReader(params.GUIParametrable):
     """
     Abstract base class for live data readers.
@@ -129,6 +131,10 @@ class LiveDataReader(Generic[T], params.GUIParametrable):
         self.latest_data: T | None = None
         self.recording_save_index = 0
         super().__init__()
+
+    @classmethod
+    def __class_getitem__(cls, item):
+        return cls
 
     @property
     def dev_name(self):
@@ -674,7 +680,7 @@ class LiveDataReader(Generic[T], params.GUIParametrable):
         return processed_data
 
 
-class StreamDataReader(LiveDataReader[T]):
+class StreamDataReader(LiveDataReader):
     """
     Subclass of LiveDataReader for streaming data acquisition.
 

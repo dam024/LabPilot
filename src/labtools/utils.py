@@ -134,6 +134,11 @@ def list_experiment_folders(base_path: str) -> List[str]:
 
 @cython.cclass
 class AbstractProperties:
+    """This class provides a mecanism to ensure that some properties are declared in subclasses.
+
+    Subclasses must call the methods of this class to ensure that the desired properties are defined in subclasses
+    """
+
     __dict__: dict
 
     @cython.ccall
@@ -151,7 +156,7 @@ class AbstractProperties:
 
         if type is not None and not isinstance(getattr(self, name), type):
             raise TypeError(
-                f"The type of the property `{name}` must be `{type}` in class {self.__class__.__name__}"
+                f"The type of the property `{name}` must be `{type}` in class {self.__class__.__name__}. Obtained type: {getattr(self, name)}"
             )
 
     @cython.ccall

@@ -1,18 +1,14 @@
-# from __future__ import annotations
-
 from abc import abstractmethod
 from copy import deepcopy
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Generic,
-    List,
-    Type,
-    TypeVar,
-    override,
-)
+from typing import TYPE_CHECKING, Dict, Generic, List, Type, TypeVar, override, Optional
 import cython
+
 from PySide6.QtWidgets import QWidget, QGroupBox, QVBoxLayout
+
+# else:
+#    QWidget = object
+#   QGroupBox = object
+#    QVBoxLayout = object
 
 
 from labtools.GUI.binding import BindingSupport
@@ -20,6 +16,10 @@ import labtools.GUI.objects as objects
 
 if TYPE_CHECKING:
     from labtools.analysis import View
+
+# else:
+#    View = object
+
 from cython.cimports.labtools.utils import AbstractProperties
 from labtools.utils import AbstractProperties
 
@@ -59,8 +59,9 @@ class GUIParametrable(AbstractProperties, BindingSupport):
 
     @cython.ccall
     @abstractmethod
-    # def get_parameters(self, frame: QWidget, view: View | None) -> List[GUIParameter]:
-    def get_parameters(self, frame: object, view: object) -> object:
+    def get_parameters(
+        self, frame: QWidget, view: Optional[View]
+    ) -> "List[GUIParameter]":
         pass
 
     @cython.ccall
@@ -76,7 +77,7 @@ class GUIParametrable(AbstractProperties, BindingSupport):
         return layout
 
     @cython.ccall
-    def create_widget(self, frame: QWidget, view: View | None) -> QWidget:
+    def create_widget(self, frame: QWidget, view: Optional[View]) -> QWidget:
         # Build the main group and its layout
         self.group_layout = self.create_group(frame)
 

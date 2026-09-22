@@ -4,3 +4,4 @@ find src -name "*.so" -delete
 find src -name "*.c" -delete
 find src -name "*.cpp" -delete
 find src -name "__pycache__" -type d -exec rm -rf {} +
+find ./ -name ".mypy_cache" -type d -exec rm -rf {} +
