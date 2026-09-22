@@ -22,6 +22,12 @@ class TestStubs(unittest.TestCase):
                 f"Run `python tests/stubtesting.py {m}` for more infos",
             )
 
+            # Check the signatures
+            self.assertTrue(
+                st.check_signatures(source, stub, verbose=False),
+                f"Run `python tests/stubtesting.py {m}` for more infos",
+            )
+
             # Check with stubtest
             self.assertTrue(
                 st.run_stubtest(m, verbose=False),

@@ -11,18 +11,26 @@ Checks:
    - classes
    - methods
    - nested classes
-   - properties
 
-2. Runtime stubtest:
+2. Static signature/type consistency:
+   - missing arguments
+   - extra arguments
+   - argument names
+   - argument kinds
+   - defaults
+   - argument annotations
+   - return annotations
+   - async/sync mismatch
+
+3. Runtime stubtest:
    - names present in runtime but missing from stub
    - names present in stub but missing at runtime
-   - function/method signatures
+   - runtime signatures
    - defaults
    - positional-only arguments
    - runtime attributes where discoverable
-   - class inheritance-related inconsistencies where detectable
 
-3. The .pyi is separately checked by mypy for type correctness.
+4. The .pyi is separately checked by mypy for type correctness.
 
 Usage:
 
@@ -31,8 +39,6 @@ Usage:
 or:
 
     python check_stubs.py mypackage.mymodule --source mymodule.py
-
-The module must be importable in the current environment.
 """
 
 from __future__ import annotations
@@ -43,13 +49,12 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from dataclasses import dataclass
 
 
 # ---------------------------------------------------------------------------
-# AST/source checker
+# Helpers
 # ---------------------------------------------------------------------------
-
-Definition = tuple[str, str]
 
 
 def is_private(name: str) -> bool:
@@ -61,13 +66,44 @@ def is_private(name: str) -> bool:
     return name.startswith("_") and not (name.startswith("__") and name.endswith("__"))
 
 
+def annotation_to_string(node: ast.expr | None) -> str | None:
+    """
+    Convert an annotation AST node into a normalized string.
+
+    ast.unparse() gives us a representation that is independent of
+    insignificant whitespace.
+    """
+    if node is None:
+        return None
+
+    return ast.unparse(node)
+
+
+def default_to_string(node: ast.expr | None) -> str | None:
+    """
+    Convert a default value into a normalized string.
+    """
+    if node is None:
+        return None
+
+    return ast.unparse(node)
+
+
+# ---------------------------------------------------------------------------
+# Definition collection
+# ---------------------------------------------------------------------------
+
+
+Definition = tuple[str, str]
+
+
 def collect_definitions(
     filename: Path,
     *,
     include_private: bool = False,
 ) -> set[str]:
     """
-    Collect qualified names of classes/functions/methods/properties.
+    Collect qualified names of classes/functions/methods.
 
     Example:
 
@@ -106,24 +142,355 @@ def collect_definitions(
                 qualified = f"{prefix}.{name}" if prefix else name
                 result.add(qualified)
 
-                # Recurse into classes and functions.
-                #
-                # We only really care about members of classes. Nested
-                # functions inside functions aren't part of the public API.
                 if isinstance(node, ast.ClassDef):
                     visit_body(node.body, qualified)
-
-                continue
-
-            # A property may be represented by a function, so it is already
-            # handled above.
-            #
-            # Handle decorated aliases only insofar as the underlying
-            # function/class is present.
 
     visit_body(tree.body)
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Function collection
+# ---------------------------------------------------------------------------
+
+
+FunctionInfo = tuple[str, ast.FunctionDef | ast.AsyncFunctionDef]
+
+
+def collect_functions(
+    filename: Path,
+    *,
+    include_private: bool = False,
+) -> dict[str, ast.FunctionDef | ast.AsyncFunctionDef]:
+    """
+    Collect all functions/methods by qualified name.
+
+    Functions nested inside functions are deliberately ignored because
+    they are not part of the module/class public API.
+    """
+
+    source = filename.read_text(encoding="utf-8")
+    tree = ast.parse(source, filename=str(filename))
+
+    result: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {}
+
+    def visit_body(body: list[ast.stmt], prefix: str = "") -> None:
+        for node in body:
+            if isinstance(
+                node,
+                (
+                    ast.FunctionDef,
+                    ast.AsyncFunctionDef,
+                ),
+            ):
+                name = node.name
+
+                if not include_private and is_private(name):
+                    continue
+
+                qualified = f"{prefix}.{name}" if prefix else name
+                result[qualified] = node
+
+            elif isinstance(node, ast.ClassDef):
+                name = node.name
+
+                if not include_private and is_private(name):
+                    continue
+
+                qualified = f"{prefix}.{name}" if prefix else name
+
+                visit_body(node.body, qualified)
+
+            # Do NOT recurse into function bodies.
+
+    visit_body(tree.body)
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Signature representation
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ParameterInfo:
+    name: str
+    kind: str
+    annotation: str | None
+    default: str | None
+
+
+@dataclass
+class SignatureInfo:
+    parameters: list[ParameterInfo]
+    return_annotation: str | None
+    is_async: bool
+
+
+def get_signature(
+    node: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> SignatureInfo:
+    """
+    Extract the complete signature from a function AST node.
+    """
+
+    args = node.args
+
+    parameters: list[ParameterInfo] = []
+
+    # Positional-only arguments
+    positional_only_count = len(args.posonlyargs)
+
+    # Regular positional arguments
+    positional_args = args.args
+
+    all_positional = args.posonlyargs + positional_args
+
+    # Defaults apply to the final N positional parameters.
+    positional_defaults: list[ast.expr | None] = [None] * (
+        len(all_positional) - len(args.defaults)
+    ) + list(args.defaults)
+
+    for index, (arg, default) in enumerate(zip(all_positional, positional_defaults)):
+        if index < positional_only_count:
+            kind = "positional-only"
+        else:
+            kind = "positional-or-keyword"
+
+        parameters.append(
+            ParameterInfo(
+                name=arg.arg,
+                kind=kind,
+                annotation=annotation_to_string(arg.annotation),
+                default=default_to_string(default),
+            )
+        )
+
+    # *args
+    if args.vararg is not None:
+        parameters.append(
+            ParameterInfo(
+                name=args.vararg.arg,
+                kind="var-positional",
+                annotation=annotation_to_string(args.vararg.annotation),
+                default=None,
+            )
+        )
+
+    # Keyword-only arguments
+    for arg, default in zip(args.kwonlyargs, args.kw_defaults):
+        parameters.append(
+            ParameterInfo(
+                name=arg.arg,
+                kind="keyword-only",
+                annotation=annotation_to_string(arg.annotation),
+                default=default_to_string(default),
+            )
+        )
+
+    # **kwargs
+    if args.kwarg is not None:
+        parameters.append(
+            ParameterInfo(
+                name=args.kwarg.arg,
+                kind="var-keyword",
+                annotation=annotation_to_string(args.kwarg.annotation),
+                default=None,
+            )
+        )
+
+    # Return value - When the return is "-> None", we consider that there is no return value
+    return_value = annotation_to_string(node.returns)
+    if return_value == "None":
+        return_value = None
+
+    return SignatureInfo(
+        parameters=parameters,
+        return_annotation=return_value,
+        is_async=isinstance(node, ast.AsyncFunctionDef),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Signature comparison
+# ---------------------------------------------------------------------------
+
+
+def compare_signatures(
+    name: str,
+    source_node: ast.FunctionDef | ast.AsyncFunctionDef,
+    stub_node: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> list[str]:
+    """
+    Compare implementation and stub signatures.
+
+    Returns a list of human-readable errors.
+    """
+
+    source_sig = get_signature(source_node)
+    stub_sig = get_signature(stub_node)
+
+    errors: list[str] = []
+
+    # ------------------------------------------------------------------
+    # async vs sync
+    # ------------------------------------------------------------------
+
+    if source_sig.is_async != stub_sig.is_async:
+        source_kind = "async" if source_sig.is_async else "sync"
+        stub_kind = "async" if stub_sig.is_async else "sync"
+
+        errors.append(
+            f"{name}: implementation is {source_kind}, " f"stub is {stub_kind}"
+        )
+
+    # ------------------------------------------------------------------
+    # Number of parameters
+    # ------------------------------------------------------------------
+
+    if len(source_sig.parameters) != len(stub_sig.parameters):
+        errors.append(
+            f"{name}: argument count differs "
+            f"(implementation={len(source_sig.parameters)}, "
+            f"stub={len(stub_sig.parameters)})"
+        )
+
+    # ------------------------------------------------------------------
+    # Compare parameters
+    # ------------------------------------------------------------------
+
+    common_count = min(
+        len(source_sig.parameters),
+        len(stub_sig.parameters),
+    )
+
+    for index in range(common_count):
+        source_param = source_sig.parameters[index]
+        stub_param = stub_sig.parameters[index]
+
+        location = f"{name}: argument #{index + 1}"
+
+        # Name
+        if source_param.name != stub_param.name:
+            errors.append(
+                f"{location} name differs "
+                f"(implementation={source_param.name!r}, "
+                f"stub={stub_param.name!r})"
+            )
+
+        # Kind
+        if source_param.kind != stub_param.kind:
+            errors.append(
+                f"{name}.{source_param.name}: argument kind differs "
+                f"(implementation={source_param.kind}, "
+                f"stub={stub_param.kind})"
+            )
+
+        # Annotation
+        if source_param.annotation != stub_param.annotation:
+            errors.append(
+                f"{name}.{source_param.name}: argument type differs "
+                f"(implementation={source_param.annotation!r}, "
+                f"stub={stub_param.annotation!r})"
+            )
+
+        # Default
+        if source_param.default != stub_param.default:
+            errors.append(
+                f"{name}.{source_param.name}: default differs "
+                f"(implementation={source_param.default!r}, "
+                f"stub={stub_param.default!r})"
+            )
+
+    # ------------------------------------------------------------------
+    # Return annotation
+    # ------------------------------------------------------------------
+
+    if source_sig.return_annotation != stub_sig.return_annotation and not (
+        source_sig.return_annotation is None and stub_sig.return_annotation is None
+    ):
+        print(
+            source_sig.return_annotation,
+            type(source_sig.return_annotation),
+            stub_sig.return_annotation,
+            type(stub_sig.return_annotation),
+        )
+        errors.append(
+            f"{name}: return type differs "
+            f"(implementation={source_sig.return_annotation!r}, "
+            f"stub={stub_sig.return_annotation!r})"
+        )
+
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# Signature checker
+# ---------------------------------------------------------------------------
+
+
+def check_signatures(
+    source_file: Path,
+    stub_file: Path,
+    *,
+    include_private: bool = False,
+    verbose: bool = True,
+) -> bool:
+    """
+    Compare function/method signatures between .py and .pyi.
+    """
+
+    source_functions = collect_functions(
+        source_file,
+        include_private=include_private,
+    )
+
+    stub_functions = collect_functions(
+        stub_file,
+        include_private=include_private,
+    )
+
+    ok = True
+
+    if verbose:
+        print()
+        print("=" * 72)
+        print("SIGNATURE / TYPE CHECK")
+        print("=" * 72)
+
+    # Functions present in source
+    for name in sorted(source_functions):
+        source_node = source_functions[name]
+
+        if name not in stub_functions:
+            # Already reported by the definition checker.
+            continue
+
+        stub_node = stub_functions[name]
+
+        errors = compare_signatures(
+            name,
+            source_node,
+            stub_node,
+        )
+
+        if errors:
+            ok = False
+
+            for error in errors:
+                print(f"  ERROR  {error}")
+
+    if ok and verbose:
+        print("\n✓ No signature or type differences found.")
+
+    return ok
+
+
+# ---------------------------------------------------------------------------
+# Source checker
+# ---------------------------------------------------------------------------
 
 
 def check_source(
@@ -173,17 +540,6 @@ def check_source(
 
         for name in extra:
             print(f"  WARNING  {name}")
-
-        # Don't necessarily fail here.
-        #
-        # A .pyi is allowed to contain typing-only things such as:
-        #
-        #   TypeVar
-        #   overloads
-        #   type aliases
-        #   @type_check_only classes
-        #
-        # Therefore this is informational rather than automatically fatal.
 
     return ok
 
@@ -281,7 +637,10 @@ def run_mypy(target: Path, *, strict: bool = False, verbose: bool = True) -> boo
         print("$", " ".join(command))
         print()
 
-    result = subprocess.run(command, capture_output=not verbose)
+    result = subprocess.run(
+        command,
+        capture_output=not verbose,
+    )
 
     return result.returncode == 0
 
@@ -329,6 +688,12 @@ def main() -> int:
         "--no-mypy",
         action="store_true",
         help="Do not run mypy.",
+    )
+
+    parser.add_argument(
+        "--no-signatures",
+        action="store_true",
+        help="Do not compare function/method signatures.",
     )
 
     parser.add_argument(
@@ -399,7 +764,7 @@ def main() -> int:
         return 2
 
     # ------------------------------------------------------------------
-    # Source check
+    # Source definition check
     # ------------------------------------------------------------------
 
     source_ok = check_source(
@@ -407,6 +772,19 @@ def main() -> int:
         args.stub,
         include_private=args.include_private,
     )
+
+    # ------------------------------------------------------------------
+    # Signature/type check
+    # ------------------------------------------------------------------
+
+    signature_ok = True
+
+    if not args.no_signatures:
+        signature_ok = check_signatures(
+            args.source,
+            args.stub,
+            include_private=args.include_private,
+        )
 
     # ------------------------------------------------------------------
     # Runtime stubtest
@@ -444,12 +822,13 @@ def main() -> int:
     print("=" * 72)
 
     print(f"Source definitions : {'PASS' if source_ok else 'FAIL'}")
+    print(f"Signatures/types   : {'PASS' if signature_ok else 'FAIL'}")
     print(f"stubtest           : {'PASS' if stubtest_ok else 'FAIL'}")
     print(f"mypy               : {'PASS' if mypy_ok else 'FAIL'}")
 
     print()
 
-    return 0 if source_ok and stubtest_ok and mypy_ok else 1
+    return 0 if source_ok and signature_ok and stubtest_ok and mypy_ok else 1
 
 
 if __name__ == "__main__":
