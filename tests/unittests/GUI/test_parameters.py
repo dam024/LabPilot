@@ -145,7 +145,9 @@ class TestBinding(tu.UpdatableConfigTest):
 
 
 class DummyParametrable(GUIParametrable):
-    title = "Test"
+    def __init__(self) -> None:
+        self.title = "Test"
+        super().__init__()
 
     @Binding
     def sample(self):

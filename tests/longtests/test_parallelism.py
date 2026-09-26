@@ -61,20 +61,28 @@ class TestReadersThreads(UpdatableConfigTest):
                 return super().on_stop()
 
         class Reader1(BaseReader):
-            name = "Reader 1"
-            dirname = "reader1"
+            def __init__(self, *args, max_rows: int = 1000, **kwargs):
+                self.name = "Reader 1"
+                self.dirname = "reader1"
+                super().__init__(*args, max_rows=max_rows, **kwargs)
 
         class Reader2(BaseReader):
-            name = "Reader 2"
-            dirname = "reader2"
+            def __init__(self, *args, max_rows: int = 1000, **kwargs):
+                self.name = "Reader 2"
+                self.dirname = "reader2"
+                super().__init__(*args, max_rows=max_rows, **kwargs)
 
         class Reader3(BaseReader):
-            name = "Reader 3"
-            dirname = "reader3"
+            def __init__(self, *args, max_rows: int = 1000, **kwargs):
+                self.name = "Reader 3"
+                self.dirname = "reader3"
+                super().__init__(*args, max_rows=max_rows, **kwargs)
 
         class Reader4(BaseReader):
-            name = "Reader 4"
-            dirname = "reader4"
+            def __init__(self, *args, max_rows: int = 1000, **kwargs):
+                self.name = "Reader 4"
+                self.dirname = "reader4"
+                super().__init__(*args, max_rows=max_rows, **kwargs)
 
         # Declare all the readers
         self.readers = [

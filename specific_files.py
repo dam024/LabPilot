@@ -30,8 +30,10 @@ class TestData(ProcessedData):
 
 
 class TestReader(LiveDataReader[TestData]):
-    name: str = "Test Reader"
-    dirname: str = "test_reader"
+    def __init__(self, refresh_delay: float = 0) -> None:
+        self.name: str = "Test Reader"
+        self.dirname: str = "test_reader"
+        super().__init__(refresh_delay)
 
     def pull_data(self) -> np.ndarray:
         time.sleep(0.5)
@@ -65,16 +67,16 @@ class TestReader(LiveDataReader[TestData]):
 
 
 class TestStreamer(StreamDataReader):
-    name: str = "Test Streamer"
-    dirname: str = "stream_reader"
-
-    can_stream_data = False
-
     @Binding
     def refresh_delay(self) -> float:
         return 0.5
 
     def __init__(self, *args, **kwargs):
+        self.name: str = "Test Streamer"
+        self.dirname: str = "stream_reader"
+
+        self.can_stream_data = False
+
         self.t = 0
         self.n_nan_f1 = 0
         self.n_nan_f2 = 0
@@ -136,9 +138,8 @@ class TestStreamer(StreamDataReader):
 
 
 class TestAnalysis(ana.DataAnalysis):
-    title: str = "Test analysis"
-
     def __init__(self) -> None:
+        self.title: str = "Test analysis"
         # Setup graphs
         self.plot_reader = plots.SimplePlot(
             "test_plot_reader",
@@ -210,9 +211,8 @@ class TestAnalysis(ana.DataAnalysis):
 
 
 class Test2ndAnalysis(ana.DataAnalysis):
-    title: str = "Test analysis"
-
     def __init__(self) -> None:
+        self.title: str = "Test analysis"
         # Setup graphs
         self.plot_reader = plots.SimplePlot(
             "test_plot_reader_2",
@@ -294,9 +294,8 @@ class Test2ndAnalysis(ana.DataAnalysis):
 
 
 class TestStreamAnalysis(ana.DataAnalysis):
-    title: str = "Test Streamer analysis"
-
     def __init__(self) -> None:
+        self.title: str = "Test Streamer analysis"
         # Setup graphs
         self.plot_streamer_ch1 = plots.MaximizationPlot(
             "test_ch_1",
@@ -412,11 +411,10 @@ class Test3View(ana.View):
 
 
 class InsertionLoss(mp.MeasurementProcedure):
-    name: str = "Insertion Loss"
-    title: str = "Measurement of Insertion Loss"
-    dirname: str = "insertion_loss"
-
     def __init__(self) -> None:
+        self.name: str = "Insertion Loss"
+        self.title: str = "Measurement of Insertion Loss"
+        self.dirname: str = "insertion_loss"
         # Creates the plot
 
         self.plot_ratio = plots.GeneralPlot(

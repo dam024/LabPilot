@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 from pathlib import Path
 
 from labtools import config
+from labtools.DataReceiver import LiveDataReader
 from labtools.GUI.binding import BindingSupport
 from labtools.data_management.local_storage import LocalStorage
 
@@ -89,6 +90,15 @@ class UpdatableConfigTest(unittest.TestCase):
         """
         # Reset the Bindings...
         for bindingInstance in BindingSupport.parametrables.values():
+            # Automatically pause the readers
+            if isinstance(bindingInstance, LiveDataReader):
+                if (
+                    hasattr(bindingInstance, "collector")
+                    and bindingInstance.collector is not None
+                ):
+                    bindingInstance.pause()
+                    bindingInstance.collector.join()
+            # Reset the binding
             if bindingInstance.__class__.__binding_instantiated__:
                 bindingInstance.__class__.__binding_instantiated__ = False
                 for _, binding in bindingInstance.__class__._bindings.items():

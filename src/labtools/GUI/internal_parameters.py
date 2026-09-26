@@ -23,8 +23,6 @@ class InvalidCall(Exception):
 
 
 class ApplicationParameters(GUIParametrable):
-    title = "Application Parameters"
-
     def __init__(
         self,
         update_interval: CBinding[int],
@@ -36,7 +34,7 @@ class ApplicationParameters(GUIParametrable):
         This is a special class.
         NEVER add additional constructor parameters.
         """
-
+        self.title = "Application Parameters"
         self.update_interval = update_interval
         self.active_view = active_view
         self.is_experiment_running = is_experiment_running
@@ -210,7 +208,9 @@ class ApplicationParameters(GUIParametrable):
 
 
 class StatusInterface(GUIParametrable):
-    title = "Status"
+    def __init__(self) -> None:
+        self.title = "Status"
+        super().__init__()
 
     @Status
     def recording(self) -> str | None:

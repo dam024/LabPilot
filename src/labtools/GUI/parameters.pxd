@@ -1,5 +1,5 @@
 
-from labtools.utils cimport AbstractProperties
+from labtools._tools.abstract_properties cimport AbstractProperties
 
 cdef class GUIParametrable(AbstractProperties):
     cdef public str title

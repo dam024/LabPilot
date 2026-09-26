@@ -28,7 +28,7 @@ from labtools.DataReceiver import (
 )
 from labtools import config
 
-from labtools.GUI.binding import Binding
+from labtools.GUI.binding import Binding, CBinding
 import tests.dummy_classes as dc
 import tests.utils as tu
 
@@ -122,10 +122,9 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
     class MinimalReader(LiveDataReader[dc.TestData]):
         """Minimal implementation for testing."""
 
-        name: str = "MinimalReader"
-        dirname: str = "minimal_reader"
-
         def __init__(self, refresh_delay: float = 0):
+            self.dirname = "minimal_reader"
+            self.name = "MinimalReader"
             super().__init__(refresh_delay)
             self._setup(None)
 
@@ -291,6 +290,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         """Test _load_file returns data when file exists."""
         reader = self.MinimalReader()
         reader.dirname = "test_reader"
+        self.assertEqual(reader.dev_name, reader.dirname)
 
         temp_data = np.array([[1.0, 2.0], [3.0, 4.0]])
         temp_file = Path(config.output_dir_data, "test_reader.npy")
@@ -417,8 +417,10 @@ class TestLiveReaderLifecycle(tu.UpdatableConfigTest):
     class TestLifecycleReader(LiveDataReader):
         """Reader for lifecycle testing."""
 
-        name: str = "LifecycleReader"
-        dirname: str = "lifecycle_reader"
+        def __init__(self, refresh_delay: float = 0) -> None:
+            self.name: str = "LifecycleReader"
+            self.dirname: str = "lifecycle_reader"
+            super().__init__(refresh_delay)
 
         def pull_data(self) -> np.ndarray:
             return np.array([[1.0, 2.0], [3.0, 4.0]])
@@ -464,8 +466,10 @@ class TestLiveReaderSimulation(tu.UpdatableConfigTest):
     class TestSimulationReader(LiveDataReader):
         """Reader for simulation testing."""
 
-        name: str = "SimulationReader"
-        dirname: str = "simulation_reader"
+        def __init__(self, refresh_delay: float = 0) -> None:
+            self.name: str = "SimulationReader"
+            self.dirname: str = "simulation_reader"
+            super().__init__(refresh_delay)
 
         def pull_data(self) -> np.ndarray:
             return np.array([[1.0, 2.0], [3.0, 4.0]])
@@ -503,10 +507,9 @@ class TestStreamDataReader(tu.UpdatableConfigTest):
     class TestStreamerReader(StreamDataReader):
         """Test streamer reader."""
 
-        name: str = "TestStreamerReader"
-        dirname: str = "test_streamer_reader"
-
         def __init__(self, *args, **kwargs):
+            self.name: str = "TestStreamerReader"
+            self.dirname: str = "test_streamer_reader"
             kwargs["max_rows"] = kwargs.get("max_rows", 100)
             super().__init__(*args, **kwargs)
 
@@ -537,6 +540,14 @@ class TestStreamDataReader(tu.UpdatableConfigTest):
         """Test StreamDataReader uses default max_rows."""
         reader = self.TestStreamerReader()
         self.assertEqual(reader.max_rows, 100)
+
+    def test_stream_reader_refresh_delay(self):
+        """Test refresh_delay defined as a `Binding` works"""
+        reader = self.TestStreamerReader()
+        reader._setup(None)
+        self.assertIsNotNone(reader.refresh_delay)
+        self.assertIsInstance(reader.refresh_delay, CBinding)
+        self.assertEqual(reader.refresh_delay.get(), 0.1)
 
     def test_stream_reader_clear(self):
         """Test that clear() resets stream state."""
@@ -841,11 +852,10 @@ class TestStreamReaderIntegration(tu.UpdatableConfigTest):
     class IntegrationReader(StreamDataReader):
         """Integration test reader."""
 
-        name: str = "IntegrationReader"
-        dirname: str = "integration_reader"
-
         def __init__(self, *args, **kwargs):
             kwargs["max_rows"] = kwargs.get("max_rows", 10)
+            self.name: str = "IntegrationReader"
+            self.dirname: str = "integration_reader"
             super().__init__(*args, **kwargs)
 
         def pull_data(self) -> np.ndarray:
@@ -997,10 +1007,13 @@ class TestReaderStatusLifecycle(tu.UpdatableConfigTest):
     class StatusTestReader(LiveDataReader):
         """Reader for status testing."""
 
-        name: str = "StatusTestReader"
-        dirname: str = "status_test_reader"
         started_signal = threading.Event()
         stopped_signal = threading.Event()
+
+        def __init__(self, refresh_delay: float = 0) -> None:
+            self.name: str = "StatusTestReader"
+            self.dirname: str = "status_test_reader"
+            super().__init__(refresh_delay)
 
         def pull_data(self) -> np.ndarray:
             if not self.started_signal.is_set():
@@ -1078,8 +1091,10 @@ class TestReaderConfigSimulation(tu.UpdatableConfigTest):
     class ConfigTestReader(LiveDataReader):
         """Reader for config testing."""
 
-        name: str = "ConfigTestReader"
-        dirname: str = "config_test_reader"
+        def __init__(self, refresh_delay: float = 0) -> None:
+            self.name: str = "ConfigTestReader"
+            self.dirname: str = "config_test_reader"
+            super().__init__(refresh_delay)
 
         def pull_data(self) -> np.ndarray:
             return np.array([[1.0, 2.0], [3.0, 4.0]])
@@ -1136,10 +1151,9 @@ class TestDataFlow(tu.UpdatableConfigTest):
     class FlowTestReader(StreamDataReader):
         """Reader for flow testing - implements all abstract methods."""
 
-        name: str = "FlowTestReader"
-        dirname: str = "flow_test_reader"
-
         def __init__(self, *args, **kwargs):
+            self.name: str = "FlowTestReader"
+            self.dirname: str = "flow_test_reader"
             kwargs["max_rows"] = kwargs.get("max_rows", 100)
             super().__init__(*args, **kwargs)
 
@@ -1295,8 +1309,10 @@ class TestReaderConfiguration(tu.UpdatableConfigTest):
     class ConfigReader(LiveDataReader):
         """Reader for config testing."""
 
-        name: str = "ConfigReader"
-        dirname: str = "config_reader"
+        def __init__(self, refresh_delay: float = 0) -> None:
+            self.name: str = "ConfigReader"
+            self.dirname: str = "config_reader"
+            super().__init__(refresh_delay)
 
         def pull_data(self) -> np.ndarray:
             return np.array([[1.0, 2.0], [3.0, 4.0]])

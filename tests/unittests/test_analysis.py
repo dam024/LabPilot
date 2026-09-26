@@ -69,9 +69,11 @@ class TestReaderProperty(tu.UpdatableConfigTest):
 
         # Simulate a reader assignment
         class MockReader(dr.StreamDataReader[dc.TestData]):
-            name = "MockReader"
-            dirname = "mock_reader"
-            can_stream_data = True
+            def __init__(self, *args, max_rows: int = 1000, **kwargs) -> None:
+                self.name = "MockReader"
+                self.dirname = "mock_reader"
+                self.can_stream_data = True
+                super().__init__(*args, max_rows=max_rows, **kwargs)
 
             def pull_data(self) -> np.ndarray:
                 return np.array([])

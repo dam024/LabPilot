@@ -1,7 +1,6 @@
-import copy
 import os
 import traceback
-from typing import Any, Callable, Type, List
+from typing import Callable, List
 import queue
 from PySide6.QtWidgets import QMainWindow
 import numpy as np
@@ -10,7 +9,6 @@ import tqdm
 import inspect
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
-import cython
 
 import functools
 import threading
@@ -130,80 +128,6 @@ def list_experiment_folders(base_path: str) -> List[str]:
                 rec_folders.insert(0, os.path.join(sub_dirs[0], d))
 
     return experiment_folders
-
-
-@cython.cclass
-class AbstractProperties:
-    """This class provides a mecanism to ensure that some properties are declared in subclasses.
-
-    Subclasses must call the methods of this class to ensure that the desired properties are defined in subclasses
-    """
-
-    __dict__: dict
-
-    @cython.ccall
-    def _check_for_property(self, name: str, type: Type | None = None):
-        """Check that the current instance possesses a given property
-
-        Args:
-            name (str): Name of the property to check
-            type (Type): Type of the property
-        """
-        if not hasattr(self, name):
-            raise AttributeError(
-                f"You must define the property `{name}` in class {self.__class__.__name__}. If you have defined it in the __init__(), you must do it BEFORE calling super().__init__()"
-            )
-
-        if type is not None and not isinstance(getattr(self, name), type):
-            raise TypeError(
-                f"The type of the property `{name}` must be `{type}` in class {self.__class__.__name__}. Obtained type: {getattr(self, name)}"
-            )
-
-    @cython.ccall
-    def _set_if_not_defined(self, name: str, value):
-        """Set the value for a property if it is not already defined
-
-        Args:
-            name (str): Name of the property
-            value (Any): Value to assign if the property is not already defined
-        """
-        if not hasattr(self, name):
-            setattr(self, name, value)
-
-    @cython.ccall
-    def _make_attribute_instance(self, attr: str, default: Any):
-        """Make the given attribute local to the class
-
-
-        Args:
-            attr (str): Name of the attribute
-            default (Any): Value to reset the class attribute to
-
-
-        It is possible to define the class attributes:
-            ```python
-            class MyClass(AbstractProperties):
-                graphs: List[AnObject] = []
-            ```
-
-            When we do this, the array `graphs` is shared among all instances of `MyClass`.
-
-        One solution is the following:
-            ```python
-            class MyClass(AbstractProperties):
-
-                def __init__(self) -> None:
-                    self.graphs: List[AnObject] = []
-            ```
-            However, if subclasses must modify the `graphs` array, this should normally be done BEFORE the `__init__`, so the modifications can could be removed.
-
-            This method provides a way to make the `graphs` array (and any objects saved as reference in memory) being declared as class attribute, while keeping them local to each instance.
-
-        """
-
-        if attr in type(self).__dict__ and attr not in vars(self):
-            setattr(self, attr, copy.copy(getattr(type(self), attr)))
-            setattr(type(self), attr, default)
 
 
 # _root: tkinter.Tk

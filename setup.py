@@ -69,6 +69,7 @@ setup(
         "scipy>=1.18.0",
         "tqdm>=4.70.0",
         "typing_extensions>=4.16.0",
+        "rich>=15.0.0",
     ],
     ext_modules=extensions,
     options={

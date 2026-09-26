@@ -15,7 +15,7 @@ from labtools.GUI.binding import (
     Status as Status,
 )
 from labtools.analysis import View as View
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, List
 
 
 class ReaderStatus(enum.StrEnum):
@@ -57,7 +57,7 @@ class LiveDataReader(params.GUIParametrable, Generic[T]):
     latest_data: T | None
     recording_save_index: int
 
-    def __init__(self) -> None:
+    def __init__(self, refresh_delay: float = 0.0) -> None:
         ...
 
     @classmethod
@@ -65,7 +65,7 @@ class LiveDataReader(params.GUIParametrable, Generic[T]):
         ...
 
     @property
-    def dev_name(self):
+    def dev_name(self) -> str:
         ...
 
     @property
@@ -74,7 +74,7 @@ class LiveDataReader(params.GUIParametrable, Generic[T]):
 
     def get_parameters(
         self, frame: QWidget, view: View | None
-    ) -> list[params.GUIParameter]:
+    ) -> List[params.GUIParameter]:
         ...
 
     def start_reader(self) -> bool:

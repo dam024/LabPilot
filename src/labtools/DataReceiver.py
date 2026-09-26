@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Tuple, Generic, TypeVar
+from typing import TYPE_CHECKING, List, Tuple, Generic, TypeVar, Union
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 import numpy as np
 from labtools import config, globalState, logger
@@ -75,38 +75,24 @@ T = TypeVar("T", bound=ProcessedData)
 
 
 @cython.cclass
-class LiveDataReader(params.GUIParametrable):
+class Reader(params.GUIParametrable):
     # class LiveDataReader(params.GUIParametrable):
-    """
-    Abstract base class for live data readers.
 
-    This class manages the lifecycle of data acquisition, including:
-    - Starting and stopping data collection threads
-    - Pulling raw data from sources
-    - Aggregating and processing data
-    - Saving data to files
-    - Managing data queues for smooth integration
-
-    Subclasses must implement the abstract methods:
-        - `pull_data()`: Pulls raw data from the acquisition source
-        - `process_data()`: Processes raw data into the desired format
-        - `on_stop()`: Cleans up resources when stopping
-
-    Attributes:
-        name (str): Identifier for the data reader
-        dirname (str): Directory name where data is saved
-        refresh_delay (float | Binding[float]): Time to wait at the end of the refresh loop
-    """
-
-    name: str
-    dirname: str
-    refresh_delay: float | Binding[float]
+    _name = cython.declare(cython.unicode, visibility="public")
+    _dirname = cython.declare(
+        cython.unicode, visibility="public"
+    )  #: str  # cython.unicode
+    _refresh_delay = cython.declare(
+        cython.double, visibility="public"
+    )  #: float | Binding[float]
     # ignore: bool = False
     # This property indicates if all arrays that are encountered must be saved. If False, only the latest one will be saved (this is information for the global_background_thread)
     # save_all_arrays: bool = False
 
     # Indicates if the reader can stream data during replay
-    can_stream_data: bool = True
+    _can_stream_data = cython.declare(cython.bint, visibility="public")
+
+    # def __cinit__(self):
 
     def __init__(
         self,
@@ -119,9 +105,11 @@ class LiveDataReader(params.GUIParametrable):
                 Units: seconds. Default: 0.0
         """
         self._check_for_property("name", str)
-        self.title = self.name
+
+        self.title = self._name
+
         self._check_for_property("dirname", str)
-        # self._check_for_property("graphs", List)
+
         self._stopped = False  # Indicates if the read loop must be stopped
         self._set_if_not_defined("refresh_delay", refresh_delay)
         self.queue = queue.Queue[T]()
@@ -137,9 +125,9 @@ class LiveDataReader(params.GUIParametrable):
         return cls
 
     @property
-    def dev_name(self):
+    def dev_name(self) -> str:
         """Developer name of the reader. This property returns the dirname attribute."""
-        return self.dirname
+        return self._dirname
 
     @property
     def has_data(self) -> bool:
@@ -150,41 +138,6 @@ class LiveDataReader(params.GUIParametrable):
             bool: True if the reader has data (either in latest_data or in the queue), False otherwise.
         """
         return self.latest_data is not None or not self.queue.empty()
-
-    def get_parameters(
-        self, frame: QWidget, view: View | None
-    ) -> List[params.GUIParameter]:
-        """
-        Get GUI parameters for the data reader.
-
-        Creates a slider for refresh_delay if it's not bound in the view.
-
-        Args:
-            frame: The parent frame widget.
-            view: The active view, if available.
-
-        Returns:
-            List[params.GUIParameter]: List of GUI parameters to display.
-        """
-        l: List[params.GUIParameter] = []
-        # print(f"{view.__class__.__name__}, {self.__class__.__name__}: {"refresh_delay" in view._bindings}, {"refresh_delay" in self._bindings}")
-        if (
-            view is not None
-            and "refresh_delay" not in view._bindings
-            and "refresh_delay" in self._bindings
-        ):
-            slider_delay = gui_obj.NumericalValueInput(
-                frame,
-                from_=0.0,
-                to=100.0,
-                value=self.refresh_delay,
-                text="Delay between samples [s]:",
-                increment=0.1,
-            )
-
-            l.append(params.GUIParameter(slider_delay))
-
-        return l
 
     def start_reader(self) -> bool:
         """
@@ -246,7 +199,7 @@ class LiveDataReader(params.GUIParametrable):
                 if config.simulation:
                     stop_event.wait(0.3)
                 else:
-                    delay = self.refresh_delay
+                    delay = self._refresh_delay
 
                     # Check if I need to use the refresh_delay of the view (if defined, overcome the one of the reader)
                     if (
@@ -302,7 +255,7 @@ class LiveDataReader(params.GUIParametrable):
                 # self.save_all_arrays = True
                 self.save_data(
                     data,
-                    os.path.join(globalState.recording_subfolder, self.dirname),
+                    os.path.join(globalState.recording_subfolder, self._dirname),
                     f"output_{self.recording_save_index}.npy",
                     force_save=True,
                 )
@@ -461,7 +414,7 @@ class LiveDataReader(params.GUIParametrable):
 
         layout.addWidget(self.status_circle)
 
-        label = QLabel(self.name)
+        label = QLabel(self._name)
         layout.addWidget(label, 1)  # Takes remaining horizontal space
 
         return frame
@@ -611,7 +564,7 @@ class LiveDataReader(params.GUIParametrable):
             else os.path.join(config.output_dir_data, subfolder)
         )
         if filename is None:
-            path = os.path.join(output_dir, self.dirname + ".npy")
+            path = os.path.join(output_dir, self._dirname + ".npy")
         else:
             path = os.path.join(output_dir, filename)
 
@@ -631,14 +584,14 @@ class LiveDataReader(params.GUIParametrable):
         """
         if path is not None:
             if not os.path.isfile(path):
-                filename = os.path.join(path, self.dirname + ".npy")
+                filename = os.path.join(path, self._dirname + ".npy")
             else:
                 filename = path
         else:
             filename = os.path.join(
                 config.output_dir_data,
                 globalState.reading_recording_subfolder or "",
-                self.dirname + ".npy",
+                self._dirname + ".npy",
             )
             # print(filename)
 
@@ -678,6 +631,101 @@ class LiveDataReader(params.GUIParametrable):
         self.queue.put(item=processed_data)
 
         return processed_data
+
+
+class LiveDataReader(Reader):
+    """
+    Abstract base class for live data readers.
+
+    This class manages the lifecycle of data acquisition, including:
+    - Starting and stopping data collection threads
+    - Pulling raw data from sources
+    - Aggregating and processing data
+    - Saving data to files
+    - Managing data queues for smooth integration
+
+    Subclasses must implement the abstract methods:
+        - `pull_data()`: Pulls raw data from the acquisition source
+        - `process_data()`: Processes raw data into the desired format
+        - `on_stop()`: Cleans up resources when stopping
+
+    Attributes:
+        name (str): Identifier for the data reader
+        dirname (str): Directory name where data is saved
+        refresh_delay (float | Binding[float]): Time to wait at the end of the refresh loop
+    """
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str):
+        self._name = value
+
+    @property
+    def dirname(self) -> str:
+        return self.dirname
+
+    @dirname.setter
+    def dirname(self, value: str):
+        self._dirname = value
+
+    @Binding
+    def refresh_delay(self) -> float:
+        return self._refresh_delay
+
+    @refresh_delay.onchange
+    def __refresh_delay(self, value: float):
+        self._refresh_delay = value
+
+    # ignore: bool = False
+    # This property indicates if all arrays that are encountered must be saved. If False, only the latest one will be saved (this is information for the global_background_thread)
+    # save_all_arrays: bool = False
+
+    # Indicates if the reader can stream data during replay
+    @property
+    def can_stream_data(self) -> bool:
+        return self._can_stream_data
+
+    @can_stream_data.setter
+    def can_stream_data(self, value: bool):
+        self._can_stream_data = value
+
+    def get_parameters(
+        self, frame: QWidget, view: View | None
+    ) -> List[params.GUIParameter]:
+        """
+        Get GUI parameters for the data reader.
+
+        Creates a slider for refresh_delay if it's not bound in the view.
+
+        Args:
+            frame: The parent frame widget.
+            view: The active view, if available.
+
+        Returns:
+            List[params.GUIParameter]: List of GUI parameters to display.
+        """
+        l: List[params.GUIParameter] = []
+        # print(f"{view.__class__.__name__}, {self.__class__.__name__}: {"refresh_delay" in view._bindings}, {"refresh_delay" in self._bindings}")
+        if (
+            view is not None
+            and "refresh_delay" not in view._bindings
+            and "refresh_delay" in self._bindings
+        ):
+            slider_delay = gui_obj.NumericalValueInput(
+                frame,
+                from_=0.0,
+                to=100.0,
+                value=self.refresh_delay,
+                text="Delay between samples [s]:",
+                increment=0.1,
+            )
+
+            l.append(params.GUIParameter(slider_delay))
+
+        return l
 
 
 class StreamDataReader(LiveDataReader):

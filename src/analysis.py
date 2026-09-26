@@ -6,10 +6,11 @@ from src.readers import ExampleStreamer
 
 
 class ExampleAnalysis(ana.DataAnalysis):
-    ### TODO: Set the title of the analysis
-    title: str = "Example Analysis"
+    ### Important: Do not declare any existing attribute here, they may not be taken into account!
 
     def __init__(self) -> None:
+        ### TODO: Set the title of the analysis
+        self.title: str = "Example Analysis"
         ### TODO: Setup the plots that you need
         self.plot_raw = plots.SimplePlot(
             "example_reader_raw",

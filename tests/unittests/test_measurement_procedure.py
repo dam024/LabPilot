@@ -43,12 +43,11 @@ import labtools.plots.plots as plots
 class TestDataMeasurementFolder(MeasurementProcedure):
     """Test subclass of MeasurementProcedure with configurable properties."""
 
-    name: str = "Test Data Measurement"
-    title: str = "Test Title"
-    dirname: str = "test_data"
-
     def __init__(self, dirname: str = "test_data", *args, **kwargs):
         """Initialize with an optional custom dirname."""
+        self.name: str = "Test Data Measurement"
+        self.title: str = "Test Title"
+        self.dirname: str = "test_data"
         self.dirname = dirname
         self.graphs = []
         super().__init__(*args, **kwargs)
@@ -70,11 +69,10 @@ class TestDataMeasurementFolder(MeasurementProcedure):
 class TestDataMeasurementFile(MeasurementProcedure):
     """Test subclass with a fixed measurement file name."""
 
-    name: str = "Test Data Measurement"
-    title: str = "Test Title"
-    dirname: str = "test_data_file"
-
     def __init__(self, *args, **kwargs):
+        self.name: str = "Test Data Measurement"
+        self.title: str = "Test Title"
+        self.dirname: str = "test_data_file"
         self.dirname = "test_data_file"
         self.graphs = []
         super().__init__(*args, **kwargs)

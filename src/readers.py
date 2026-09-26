@@ -11,10 +11,13 @@ class ExampleData(ProcessedData):
 
 
 class ExampleStreamer(StreamDataReader[ExampleData]):
-    ### TODO: Define the name of the reader
-    name: str = "Example Streamer"
-    ### TODO: Define the directory where the data of the reader will be stored
-    dirname: str = "example_streamer"
+    ### Important: Do not declare any existing attribute here, they may not be taken into account!
+    def __init__(self, *args, max_rows: int = 1000, **kwargs) -> None:
+        ### TODO: Define the name of the reader
+        self.name: str = "Example Streamer"
+        ### TODO: Define the directory where the data of the reader will be stored
+        self.dirname: str = "example_streamer"
+        super().__init__(*args, max_rows=max_rows, **kwargs)
 
     def pull_data(self) -> np.ndarray:
         """Implement this data to read values from your instrument.

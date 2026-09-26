@@ -20,8 +20,8 @@ if TYPE_CHECKING:
 # else:
 #    View = object
 
-from cython.cimports.labtools.utils import AbstractProperties
-from labtools.utils import AbstractProperties
+from cython.cimports.labtools._tools.abstract_properties import AbstractProperties
+from labtools._tools.abstract_properties import AbstractProperties
 
 T = TypeVar("T")
 
