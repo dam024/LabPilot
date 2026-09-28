@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Tuple, Generic, TypeVar
+from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 import numpy as np
 from labtools import config, globalState, logger
@@ -13,9 +13,6 @@ import enum
 import shutil
 import traceback
 from dataclasses import dataclass, fields
-import cython
-
-import cython.cimports.labtools.GUI.parameters as params
 import labtools.GUI.parameters as params
 from labtools.GUI.binding import Binding, CBinding, Status
 import labtools.GUI.objects as gui_obj
@@ -71,11 +68,7 @@ class ProcessedData:
         return np.vstack(arrays)
 
 
-T = TypeVar("T", bound=ProcessedData)
-
-
-@cython.cclass
-class LiveDataReader(params.GUIParametrable):
+class LiveDataReader[T: ProcessedData](params.GUIParametrable):
     # class LiveDataReader(params.GUIParametrable):
     """
     Abstract base class for live data readers.

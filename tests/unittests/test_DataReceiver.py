@@ -207,7 +207,6 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         result = reader.aggregate_data(raw_data, ignore_max_length=True)
         np.testing.assert_array_equal(result, raw_data)
 
-    @unittest.skip("Need to migrate LiveDataReader to Cython")
     def test_process_data_abstraction(self):
         """Test that process_data is abstract and must be implemented."""
         try:

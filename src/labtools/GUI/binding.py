@@ -44,7 +44,6 @@ from typing import (
     override,
 )
 import weakref
-import cython
 
 from typing_extensions import disjoint_base
 import functools

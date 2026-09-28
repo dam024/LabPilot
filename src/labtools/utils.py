@@ -1,4 +1,5 @@
 import copy
+import abc
 import os
 import traceback
 from typing import Any, Callable, Type, List
@@ -10,7 +11,6 @@ import tqdm
 import inspect
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
-import cython
 
 import functools
 import threading
@@ -132,8 +132,7 @@ def list_experiment_folders(base_path: str) -> List[str]:
     return experiment_folders
 
 
-@cython.cclass
-class AbstractProperties:
+class AbstractProperties(abc.ABC):
     """This class provides a mecanism to ensure that some properties are declared in subclasses.
 
     Subclasses must call the methods of this class to ensure that the desired properties are defined in subclasses
@@ -141,7 +140,6 @@ class AbstractProperties:
 
     __dict__: dict
 
-    @cython.ccall
     def _check_for_property(self, name: str, type: Type | None = None):
         """Check that the current instance possesses a given property
 
@@ -159,7 +157,6 @@ class AbstractProperties:
                 f"The type of the property `{name}` must be `{type}` in class {self.__class__.__name__}. Obtained type: {getattr(self, name)}"
             )
 
-    @cython.ccall
     def _set_if_not_defined(self, name: str, value):
         """Set the value for a property if it is not already defined
 
@@ -170,7 +167,6 @@ class AbstractProperties:
         if not hasattr(self, name):
             setattr(self, name, value)
 
-    @cython.ccall
     def _make_attribute_instance(self, attr: str, default: Any):
         """Make the given attribute local to the class
 

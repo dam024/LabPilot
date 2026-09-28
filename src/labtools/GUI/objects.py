@@ -13,7 +13,6 @@ import math
 # import matplotlib as mpl
 # from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 
-import cython
 from PySide6.QtCore import Qt, Signal, QObject
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -40,9 +39,6 @@ from labtools.GUI.binding import CBinding
 import labtools.plots.plots as plots
 from labtools.utils import threadSafe
 from labtools import config
-
-
-T = TypeVar("T", bound=QWidget)
 
 
 class Widget:
@@ -111,7 +107,10 @@ class GraphCanvas(Widget):
             self.graph.figure.save(path)
 
 
-class LabelledWidget(Generic[T], Widget):
+T = TypeVar("T", bound=QWidget)
+
+
+class LabelledWidget[T: QWidget](Widget):
     def __init__(
         self,
         parent: QWidget,
@@ -257,10 +256,7 @@ class Switch(LabelledWidget):
         return self.switch.isChecked()
 
 
-T = TypeVar("T", bound=int | float)
-
-
-class NumericalValueInput(LabelledWidget, Generic[T]):
+class NumericalValueInput[T: int | float](LabelledWidget):
     """
     Widget to ask the user for a numerical value.
 
