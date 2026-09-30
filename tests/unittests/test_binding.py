@@ -32,6 +32,7 @@ from labtools.GUI.binding import (
     BindingAlreadyInitializedError,
     BindingNotInitializedError,
     BindingNotInstantiatedError,
+    BindingOverrideError,
     BindingWithoutParentError,
     QtBindingVariable,
     CBinding,
@@ -96,7 +97,6 @@ class TestBindingSupport(BindingSupport):
 
     def __init__(self, window: Any = None):
         super().__init__()
-        self._setup(window)
         # Set the class attribute for testing
         TestBindingSupport.int_value_changed = None
 
@@ -898,7 +898,6 @@ class TestBindingSupportUnitTest(UpdatableConfigTest):
                 return 2
 
         child = ChildSupport()
-        child._setup(None)
 
         self.assertTrue(hasattr(child, "parent_value"))
         self.assertTrue(hasattr(child, "child_value"))
@@ -919,11 +918,6 @@ class TestBindingSupportUnitTest(UpdatableConfigTest):
         child = ChildSupport()
         parent = ParentSupport()
         parent2 = ParentSupport()
-
-        parent._setup(None)
-        parent2._setup(None)
-
-        child._setup(None)
 
         self.assertEqual(child.parent_value.get(), 1)
 
@@ -948,12 +942,9 @@ class TestBindingSupportUnitTest(UpdatableConfigTest):
                 return 2
 
         child = ChildSupport()
-        child._setup(None)
 
         parent = ParentSupport()
-        parent._setup(None)
         parent2 = ParentSupport()
-        parent2._setup(None)
 
         self.assertEqual(child.parent_value.get(), 1)
 
@@ -964,6 +955,25 @@ class TestBindingSupportUnitTest(UpdatableConfigTest):
         self.assertEqual(parent.parent_value.get(), 5)
         self.assertEqual(child.parent_value.get(), 1)
         self.assertEqual(parent2.parent_value.get(), 5)
+
+    def _test_inheritance_override(self):
+        """Test that it's not possible to override a Binding
+
+        Note:
+            I couldn't implement this feature in a reliable way... If one day I can do it, the test is here
+        """
+
+        class ParentSupport(BindingSupport):
+            @Binding
+            def value(cls) -> int:
+                return 1
+
+        with self.assertRaises(BindingOverrideError):
+
+            class ChildSupport(BindingSupport):
+                @Binding
+                def value(cls) -> int:
+                    return 2
 
     def test_binding_support_set_main_instance(self):
         """Test set_main_instance method."""
@@ -1130,14 +1140,15 @@ class TestBindingIntegration(UpdatableConfigTest):
     def test_integration_onchange_callback_propagation(self):
         """Test that onchange callbacks are properly connected."""
         parent = QObject()
-        instance = TestBindingSupport(parent)
+        instance = TestBindingSupport()
+        instance.setup_qt_events(parent)
 
         def handler(v):
             TestBindingSupport.int_value_changed = v
 
-        self.assertIsNotNone(TestBindingSupport.int_value._variable)
-        if TestBindingSupport.int_value._variable is not None:
-            TestBindingSupport.int_value._variable.valueChanged.connect(handler)
+        self.assertIsNotNone(TestBindingSupport.int_value.qt_variable())
+        if TestBindingSupport.int_value.qt_variable():
+            TestBindingSupport.int_value.qt_variable().valueChanged.connect(handler)
 
         TestBindingSupport.int_value.set(None, 42)
 

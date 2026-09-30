@@ -46,10 +46,10 @@ T = TypeVar("T", bound=ProcessedData)
 
 
 @disjoint_base
-class LiveDataReader(params.GUIParametrable, Generic[T]):
+class Reader(params.GUIParametrable, Generic[T]):
     name: str
     dirname: str
-    refresh_delay: float | Binding[float]
+    refresh_delay: Binding[float]
     can_stream_data: bool
     title: Incomplete
     queue: Incomplete
@@ -149,6 +149,10 @@ class LiveDataReader(params.GUIParametrable, Generic[T]):
 
     def load_data(self, path: str | None = None) -> T | None:
         ...
+
+
+class LiveDataReader(Reader):
+    pass
 
 
 class StreamDataReader(LiveDataReader, metaclass=abc.ABCMeta):

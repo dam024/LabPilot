@@ -126,7 +126,6 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
             self.dirname = "minimal_reader"
             self.name = "MinimalReader"
             super().__init__(refresh_delay)
-            self._setup(None)
 
         def pull_data(self) -> np.ndarray:
             return np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
@@ -148,7 +147,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         self.assertEqual(reader.dirname, "minimal_reader")
         self.assertFalse(reader.has_data)
         self.assertIsNone(reader.latest_data)
-        self.assertEqual(reader.refresh_delay, 0.0)
+        self.assertEqual(reader.refresh_delay.get(), 0.0)
         self.assertTrue(reader.can_stream_data)
 
     def test_dev_name_property(self):
@@ -439,7 +438,6 @@ class TestLiveReaderLifecycle(tu.UpdatableConfigTest):
 
     def setUp(self) -> None:
         self.reader = self.TestLifecycleReader()
-        self.reader._setup(None)
         return super().setUp()
 
     def test_start_reader_success(self):
@@ -485,7 +483,6 @@ class TestLiveReaderSimulation(tu.UpdatableConfigTest):
 
     def setUp(self) -> None:
         self.reader = self.TestSimulationReader()
-        self.reader._setup(None)
         return super().setUp()
 
     def test_start_reader_in_simulation(self):
@@ -527,7 +524,7 @@ class TestStreamDataReader(tu.UpdatableConfigTest):
 
         @Binding
         def refresh_delay(self) -> float:
-            return 0.1
+            return 0.0
 
     def test_stream_reader_initialization(self):
         """Test StreamDataReader initialization with max_rows."""
@@ -544,10 +541,9 @@ class TestStreamDataReader(tu.UpdatableConfigTest):
     def test_stream_reader_refresh_delay(self):
         """Test refresh_delay defined as a `Binding` works"""
         reader = self.TestStreamerReader()
-        reader._setup(None)
         self.assertIsNotNone(reader.refresh_delay)
         self.assertIsInstance(reader.refresh_delay, CBinding)
-        self.assertEqual(reader.refresh_delay.get(), 0.1)
+        self.assertEqual(reader.refresh_delay.get(), 0.0)
 
     def test_stream_reader_clear(self):
         """Test that clear() resets stream state."""
@@ -981,7 +977,6 @@ class TestInheritance(tu.UpdatableConfigTest):
     def test_streamreader_can_be_used_as_livedatareader(self):
         """Test that StreamDataReader can be used as LiveDataReader."""
         reader = dc.TestStreamer()
-        reader._setup(None)
         reader.name = "Test"
         reader.dirname = "test"
 
@@ -1038,7 +1033,6 @@ class TestReaderStatusLifecycle(tu.UpdatableConfigTest):
     def test_status_transitions(self):
         """Test status transitions through lifecycle."""
         reader = self.StatusTestReader()
-        reader._setup(None)  # Need to instantiate the Bindings
 
         # Initially not running
         self.assertEqual(reader.status.get(), ReaderStatus.NOT_RUNNING)
@@ -1110,7 +1104,6 @@ class TestReaderConfigSimulation(tu.UpdatableConfigTest):
 
     def setUp(self) -> None:
         self.reader = self.ConfigTestReader()
-        self.reader._setup(None)
 
         return super().setUp()
 
@@ -1329,12 +1322,12 @@ class TestReaderConfiguration(tu.UpdatableConfigTest):
     def test_default_refresh_delay(self):
         """Test default refresh_delay value."""
         reader = self.ConfigReader()
-        self.assertEqual(reader.refresh_delay, 0.0)
+        self.assertEqual(reader.refresh_delay.get(), 0.0)
 
     def test_custom_refresh_delay(self):
         """Test custom refresh_delay value."""
         reader = self.ConfigReader(refresh_delay=0.5)
-        self.assertEqual(reader.refresh_delay, 0.5)
+        self.assertEqual(reader.refresh_delay.get(), 0.5)
 
     def test_default_can_stream_data(self):
         """Test default can_stream_data value."""
@@ -1344,7 +1337,7 @@ class TestReaderConfiguration(tu.UpdatableConfigTest):
     def test_custom_can_stream_data(self):
         """Test custom can_stream_data value using __dict__."""
         reader = self.ConfigReader()
-        reader.__dict__["can_stream_data"] = False
+        reader.can_stream_data = False
         self.assertFalse(reader.can_stream_data)
 
     def test_readme_delay_property(self):
@@ -1353,10 +1346,10 @@ class TestReaderConfiguration(tu.UpdatableConfigTest):
 
         # Test setting property
         reader.refresh_delay = 0.1
-        self.assertEqual(reader.refresh_delay, 0.1)
+        self.assertEqual(reader.refresh_delay.get(), 0.1)
 
         # Test that it's a float
-        self.assertIsInstance(reader.refresh_delay, float)
+        self.assertIsInstance(reader.refresh_delay, CBinding)
 
 
 class TestStreamReaderConfiguration(tu.UpdatableConfigTest):

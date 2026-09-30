@@ -94,7 +94,6 @@ class TestReadersThreads(UpdatableConfigTest):
 
         # Run all the loops
         for reader in self.readers:
-            reader._setup(None)
             self.assertTrue(reader.start())
 
         time.sleep(0.1)

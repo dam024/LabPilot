@@ -12,10 +12,6 @@ class TestRecordingInfos(tu.UpdatableConfigTest):
 
         # Defines two classes
         class TestBindingSupport(BindingSupport):
-            def __init__(self) -> None:
-                super().__init__()
-                self._setup(None)
-
             @Binding
             def value(self) -> int:
                 return 0
@@ -41,14 +37,17 @@ class TestRecordingInfos(tu.UpdatableConfigTest):
 
         self.assertEqual(b.value.get(), 5)
 
-    def test_recording_info_save_with_deleted_bindings(self):
-        """Test that if I deleate an instance of a Binding that wasn't setup, it won't cause an error while dumping the parameters"""
+    def _test_recording_info_save_with_deleted_bindings(self):
+        """Test that if I deleate an instance of a Binding that wasn't setup, it won't cause an error while dumping the parameters
+
+        Note:
+            This error should not happen anymore, since every Binding is automatically _setup() during the first instantialtion! This test is deleted
+        """
 
         # Defines two classes
         class TestBindingSupport(BindingSupport):
             def __init__(self) -> None:
                 super().__init__()
-                self._setup(None)
 
             @Binding
             def value(self) -> int:
@@ -62,7 +61,7 @@ class TestRecordingInfos(tu.UpdatableConfigTest):
 
         # Instantiate one Binding and change its value
         b = TestBindingSupport()
-        b1 = DeletedBinding()
+        # b1 = DeletedBinding()
         b.value = 5
 
         # Check the initial state

@@ -67,17 +67,13 @@ class TestReader(LiveDataReader[TestData]):
 
 
 class TestStreamer(StreamDataReader[TestData]):
-    @Binding
-    def refresh_delay(self) -> float:
-        """Test of having the refresh_delay as a Binding"""
-        return 0.5
-
     def __init__(self, *args, **kwargs):
         self.t = 0
         self.n_nan_f1 = 0
         self.n_nan_f2 = 0
         self.name: str = "Test Streamer"
         self.dirname = "stream_reader"
+        kwargs["refresh_delay"] = 0.5
         super().__init__(*args, **kwargs)
 
     def pull_data(self) -> np.ndarray:

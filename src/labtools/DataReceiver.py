@@ -92,26 +92,24 @@ class Reader(params.GUIParametrable):
     # Indicates if the reader can stream data during replay
     _can_stream_data = cython.declare(cython.bint, visibility="public")
 
-    # def __cinit__(self):
+    def __cinit__(self):
+        self._can_stream_data = True
 
-    def __init__(
-        self,
-        refresh_delay: float = 0.0,
-    ):
+    def __init__(self):
         """Initialize the LiveDataReader.
 
         Args:
             refresh_delay (float, optional): Time to wait at the end of the refresh loop before rerunning it.
                 Units: seconds. Default: 0.0
         """
-        self._check_for_property("name", str)
+        # self._check_for_property("name", str)
 
-        self.title = self._name
+        # self.title = self._name
 
-        self._check_for_property("dirname", str)
+        # self._check_for_property("dirname", str)
 
         self._stopped = False  # Indicates if the read loop must be stopped
-        self._set_if_not_defined("refresh_delay", refresh_delay)
+        # self._set_if_not_defined("refresh_delay", refresh_delay)
         self.queue = queue.Queue[T]()
         self.save_queue = queue.Queue[
             Tuple[np.ndarray, str, bool]
@@ -665,7 +663,7 @@ class LiveDataReader(Reader):
 
     @property
     def dirname(self) -> str:
-        return self.dirname
+        return self._dirname
 
     @dirname.setter
     def dirname(self, value: str):
@@ -673,7 +671,7 @@ class LiveDataReader(Reader):
 
     @Binding
     def refresh_delay(self) -> float:
-        return self._refresh_delay
+        return 0.0
 
     @refresh_delay.onchange
     def __refresh_delay(self, value: float):
@@ -692,6 +690,18 @@ class LiveDataReader(Reader):
     def can_stream_data(self, value: bool):
         self._can_stream_data = value
 
+    def __init__(self, refresh_delay: float = 0.0):
+        self._check_for_property("name", str)
+
+        self.title = self.name
+
+        self._check_for_property("dirname", str)
+
+        self._stopped = False  # Indicates if the read loop must be stopped
+        # self._set_if_not_defined("refresh_delay", refresh_delay)
+        super().__init__()
+        self.refresh_delay = refresh_delay
+
     def get_parameters(
         self, frame: QWidget, view: View | None
     ) -> List[params.GUIParameter]:
@@ -708,7 +718,7 @@ class LiveDataReader(Reader):
             List[params.GUIParameter]: List of GUI parameters to display.
         """
         l: List[params.GUIParameter] = []
-        # print(f"{view.__class__.__name__}, {self.__class__.__name__}: {"refresh_delay" in view._bindings}, {"refresh_delay" in self._bindings}")
+        # print(f"{view.__class__.__name__}, {self.__class__.__name__}: {"refresh_delay" in view._bindings}, {"refresh_delay" in self._bindings}", self.refresh_delay.get())
         if (
             view is not None
             and "refresh_delay" not in view._bindings

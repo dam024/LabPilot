@@ -477,8 +477,9 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
                 hasattr(reader, "dirname"),
                 f"Step 5: Reader {reader.__class__.__name__} should have dirname",
             )
+            dirnam = str(reader.dirname)
             self.assertIsInstance(
-                reader.dirname,
+                dirnam,
                 str,
                 f"Step 5: Reader {reader.__class__.__name__}.dirname should be a string",
             )

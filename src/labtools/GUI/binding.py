@@ -80,6 +80,10 @@ class BindingNotInstantiatedError(Exception):
     pass
 
 
+class BindingOverrideError(Exception):
+    pass
+
+
 # ============================================================================
 # Qt variable replacement
 # ============================================================================
@@ -176,10 +180,14 @@ class CBinding(Generic[T]):
         self.owner_class = owner_class
 
         if parent is not None:
-            self._variable = QtBindingVariable(initial_value, parent)
-            self._variable.valueChanged.connect(self.__qt_change_handler__)
+            self.set_parent(parent)
         else:
             self._variable = None
+
+    def set_parent(self, parent: QObject):
+        """Register the Window that will be parent to the current Binding object"""
+        self._variable = QtBindingVariable(self.__value, parent)
+        self._variable.valueChanged.connect(self.__qt_change_handler__)
 
     def qt_variable(self) -> QtBindingVariable[T]:
         """Get the Qt variable for signal emission.
@@ -447,7 +455,7 @@ class Binding(Generic[T]):
             raise BindingNotInitializedError(
                 "You cannot call this variable before it has been instantiated. "
                 "Please, make sure the main application windows was created before "
-                "you call it. For example, the `__init__` function is NOT an appropriate location!"
+                "you call it. For example, call it AFTER calling super().__init__() in the `__init__` function!"
             )
 
         return self._variable
@@ -614,6 +622,14 @@ class BindingSupport:
             attr: Binding,
             base: Type,
         ):
+            # if name in cls._bindings:
+            #    print(cls.__mro__)
+            #    print(cls.__dict__.keys())
+            #    print(cls._bindings, base.__name__, name, cls.#__name__, attr)
+            #    raise BindingOverrideError(
+            #        f"{cls.__name__}.{name}: Override of @Binding is not supported! If you want to change what happens when the value of the Binding changes, open an issue (not supported yet)"
+            #    )
+
             if base != cls:
                 # Not the first definition of this binding
                 copied = deepcopy(attr)
@@ -639,6 +655,7 @@ class BindingSupport:
         parametrables dictionary for later lookup.
         """
         super().__init__()
+        self.window = None
 
         # When the class is destroyed, it performs cleaning and saving of Binding values
         self._finalizer = weakref.finalize(
@@ -651,6 +668,9 @@ class BindingSupport:
         # main instance management
         if self.__class__.__main_instance__ is None:
             self.set_main_instance()
+
+        if not self.__class__.__binding_instantiated__:
+            self._setup()
 
     # @cython.ccall
     def set_main_instance(self):
@@ -760,7 +780,8 @@ class BindingSupport:
                 getattr(cls, name).set_signals(value)
 
     # @cython.ccall
-    def _instantiate_bindings(self) -> None:
+    @classmethod
+    def _instantiate_bindings(cls) -> None:
         """Creates all the CBinding instances for the current class.
 
         This method should be called once per instance in the __init__ method.
@@ -776,50 +797,29 @@ class BindingSupport:
                 super().__init__()
                 self._setup(window)  # Calls _instantiate_bindings internally
         """
-        if self.__binding_instantiated__:
+        if cls.__binding_instantiated__:
             return
 
-        self.__class__.__binding_instantiated__ = True
+        cls.__binding_instantiated__ = True
 
-        logger.debug(f"Instantiate bindings for " f"'{self.__class__.__name__}'")
+        logger.debug(f"Instantiate bindings for " f"'{cls.__name__}'")
 
-        parent = self.window
-
-        for _, binding in self._bindings.items():
-            binding.create_variable(
-                self.__class__,
-                parent,
-            )
+        for _, binding in cls._bindings.items():
+            binding.create_variable(cls, None)
 
     # @cython.ccall
+    @classmethod
     def _setup(
-        self,
-        window: "mainGUI.MainWindow | None",
+        cls,
     ) -> None:
-        """Setup the `Binding`s and create them.
+        """Sets up the `Binding`s and creates them."""
+        cls._instantiate_bindings()
 
-        YOU MUST CALL THIS METHOD in your __init__! It is your responsibility!
-
-        This method:
-        1. Stores the window reference
-        2. Calls _instantiate_bindings() which creates all CBinding instances
-        3. Saves all auto_save=True values to the info file
-
-        Args:
-            window: The main GUI window instance. Used as parent for Qt variables.
-
-        Example:
-            class MyView(BindingSupport):
-                @Binding
-                def my_param(cls) -> int:
-                    return 0
-
-                def __init__(self, window):
-                    super().__init__()
-                    self._setup(window)  # Required!
-
-                # Now self.my_param is accessible
-                print(self.my_param.get())
-        """
+    def set_window(self, window: "mainGUI.MainWindow"):
         self.window = window
-        self._instantiate_bindings()
+        self.setup_qt_events(window)
+
+    def setup_qt_events(self, parent: QObject):
+        """Setup the `Binding`s so that they will respond to QT signals."""
+        for _, binding in self._bindings.items():
+            binding._variable.set_parent(parent)
