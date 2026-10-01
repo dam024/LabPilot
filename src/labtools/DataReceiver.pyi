@@ -47,17 +47,20 @@ T = TypeVar("T", bound=ProcessedData)
 
 @disjoint_base
 class Reader(params.GUIParametrable, Generic[T]):
-    name: str
-    dirname: str
-    refresh_delay: Binding[float]
-    can_stream_data: bool
-    title: Incomplete
-    queue: Incomplete
-    save_queue: Incomplete
-    latest_data: T | None
-    recording_save_index: int
+    # name: str
+    # dirname: str
+    # refresh_delay: Binding[float]
+    # can_stream_data: bool
+    # title: Incomplete
+    # queue: Incomplete
+    # save_queue: Incomplete
+    # latest_data: T | None
+    # recording_save_index: int
 
-    def __init__(self, refresh_delay: float = 0.0) -> None:
+    def __cinit__(self):
+        ...
+
+    def __init__(self) -> None:
         ...
 
     @classmethod
@@ -70,11 +73,6 @@ class Reader(params.GUIParametrable, Generic[T]):
 
     @property
     def has_data(self) -> bool:
-        ...
-
-    def get_parameters(
-        self, frame: QWidget, view: View | None
-    ) -> List[params.GUIParameter]:
         ...
 
     def start_reader(self) -> bool:
@@ -151,8 +149,46 @@ class Reader(params.GUIParametrable, Generic[T]):
         ...
 
 
-class LiveDataReader(Reader):
-    pass
+class LiveDataReader(Reader, metaclass=abc.ABCMeta):
+    @property
+    def name(self) -> str:
+        ...
+
+    @name.setter
+    def name(self, value: str):
+        ...
+
+    @property
+    def dirname(self) -> str:
+        ...
+
+    @dirname.setter
+    def dirname(self, value: str):
+        ...
+
+    @Binding
+    def refresh_delay(self) -> float:
+        ...
+
+    @refresh_delay.onchange
+    def __refresh_delay(self, value: float):
+        ...
+
+    @property
+    def can_stream_data(self) -> bool:
+        ...
+
+    @can_stream_data.setter
+    def can_stream_data(self, value: bool):
+        ...
+
+    def __init__(self, refresh_delay: float = 0.0):
+        ...
+
+    def get_parameters(
+        self, frame: QWidget, view: View | None
+    ) -> List[params.GUIParameter]:
+        ...
 
 
 class StreamDataReader(LiveDataReader, metaclass=abc.ABCMeta):

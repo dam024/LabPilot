@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import abstractmethod
+import abc
 from typing import TYPE_CHECKING, List, Tuple, Generic, TypeVar, Union
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 import numpy as np
@@ -631,7 +632,7 @@ class Reader(params.GUIParametrable):
         return processed_data
 
 
-class LiveDataReader(Reader):
+class LiveDataReader(Reader, metaclass=abc.ABCMeta):
     """
     Abstract base class for live data readers.
 
