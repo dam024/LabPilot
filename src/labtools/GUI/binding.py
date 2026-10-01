@@ -79,6 +79,10 @@ class BindingNotInstantiatedError(Exception):
     pass
 
 
+class BindingOverrideError(Exception):
+    pass
+
+
 # ============================================================================
 # Qt variable replacement
 # ============================================================================
@@ -175,10 +179,14 @@ class CBinding(Generic[T]):
         self.owner_class = owner_class
 
         if parent is not None:
-            self._variable = QtBindingVariable(initial_value, parent)
-            self._variable.valueChanged.connect(self.__qt_change_handler__)
+            self.set_parent(parent)
         else:
             self._variable = None
+
+    def set_parent(self, parent: QObject):
+        """Register the Window that will be parent to the current Binding object"""
+        self._variable = QtBindingVariable(self.__value, parent)
+        self._variable.valueChanged.connect(self.__qt_change_handler__)
 
     def qt_variable(self) -> QtBindingVariable[T]:
         """Get the Qt variable for signal emission.
@@ -638,6 +646,7 @@ class BindingSupport:
         parametrables dictionary for later lookup.
         """
         super().__init__()
+        self.window = None
 
         # When the class is destroyed, it performs cleaning and saving of Binding values
         self._finalizer = weakref.finalize(
@@ -651,7 +660,9 @@ class BindingSupport:
         if self.__class__.__main_instance__ is None:
             self.set_main_instance()
 
-    # @cython.ccall
+        if not self.__class__.__binding_instantiated__:
+            self._setup()
+
     def set_main_instance(self):
         """Sets the current object to be the main instance of the class.
 
@@ -665,7 +676,6 @@ class BindingSupport:
         """
         self.__class__.__main_instance__ = self
 
-    # @cython.ccall
     @classmethod
     def get_main_instance(cls) -> Self:
         """Get the main instance of the class.
@@ -682,7 +692,6 @@ class BindingSupport:
             )
         return cls.__main_instance__
 
-    # @cython.ccall
     def _on_exit(self) -> None:
         """Cleanup and save bindings when the object is destroyed.
 
@@ -701,7 +710,6 @@ class BindingSupport:
                     value = getattr(self, name).get()
                     db.set(self, name, value)
 
-    # @cython.ccall
     @classmethod
     def save_values(cls, infos: "ParametrizedInfos") -> None:
         """Saves the values for all Bindings with auto_save=True.
@@ -729,7 +737,6 @@ class BindingSupport:
                 value = getattr(cls, name).get()
                 infos.set_parameter(cls, name, value)
 
-    # @cython.ccall
     @classmethod
     def restore_values(cls, infos: "ParametrizedInfos") -> None:
         """Restores saved values from measurement info for all bindings.
@@ -758,8 +765,8 @@ class BindingSupport:
                 # getattr(cls, name)._set(value)
                 getattr(cls, name).set_signals(value)
 
-    # @cython.ccall
-    def _instantiate_bindings(self) -> None:
+    @classmethod
+    def _instantiate_bindings(cls) -> None:
         """Creates all the CBinding instances for the current class.
 
         This method should be called once per instance in the __init__ method.
@@ -773,27 +780,24 @@ class BindingSupport:
         Example:
             def __init__(self, window):
                 super().__init__()
-                self._setup(window)  # Calls _instantiate_bindings internally
+                self._setup()  # Calls _instantiate_bindings internally
         """
-        if self.__binding_instantiated__:
+        if cls.__binding_instantiated__:
             return
 
-        self.__class__.__binding_instantiated__ = True
+        cls.__binding_instantiated__ = True
 
-        logger.debug(f"Instantiate bindings for " f"'{self.__class__.__name__}'")
+        logger.debug(f"Instantiate bindings for " f"'{cls.__name__}'")
 
-        parent = self.window
-
-        for _, binding in self._bindings.items():
+        for _, binding in cls._bindings.items():
             binding.create_variable(
-                self.__class__,
-                parent,
+                cls,
+                None,
             )
 
-    # @cython.ccall
+    @classmethod
     def _setup(
-        self,
-        window: "mainGUI.MainWindow | None",
+        cls,
     ) -> None:
         """Setup the `Binding`s and create them.
 
@@ -820,5 +824,13 @@ class BindingSupport:
                 # Now self.my_param is accessible
                 print(self.my_param.get())
         """
+        cls._instantiate_bindings()
+
+    def set_window(self, window: "mainGUI.MainWindow"):
         self.window = window
-        self._instantiate_bindings()
+        self.setup_qt_events(window)
+
+    def setup_qt_events(self, parent: QObject):
+        """Setup the `Binding`s so that they will respond to QT signals."""
+        for _, binding in self._bindings.items():
+            binding._variable.set_parent(parent)

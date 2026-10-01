@@ -181,7 +181,6 @@ class TestMeasurementProcedureSave(du.UpdatableConfigTest):
         """Set up for save tests."""
         super().setUp()
         self.procedure = TestDataMeasurementFolder()
-        self.procedure._setup(None)
 
     def test_save_creates_measurements_npy_file(self):
         """Test that save creates a measurements.npy file."""
@@ -438,7 +437,6 @@ class TestMeasurementProcedureLoadPlotData(du.UpdatableConfigTest):
     def setUp(self) -> None:
         """Set up for load_plot_data tests."""
         self.procedure = TestDataMeasurementFolder()
-        self.procedure._setup(None)
         super().setUp()
 
     def test_load_plot_data_without_existing_file_does_nothing(self):
@@ -517,7 +515,6 @@ class TestMeasurementProcedureExecuteProcedure(du.UpdatableConfigTest):
     def setUp(self) -> None:
         """Set up for execute_procedure tests."""
         self.procedure = TestDataMeasurementFolder()
-        self.procedure._setup(None)
         self.procedure.execute_stop_event.clear()
 
         # Create mock readers
@@ -602,7 +599,6 @@ class TestMeasurementProcedureConcurrency(du.UpdatableConfigTest):
     def setUp(self) -> None:
         """Set up for concurrency tests."""
         self.procedure = TestDataMeasurementFolder()
-        self.procedure._setup(None)
         self.procedure.execute_stop_event.clear()
         super().setUp()
 
@@ -760,7 +756,6 @@ class TestMeasurementProcedureStateManagement(du.UpdatableConfigTest):
 
     def setUp(self) -> None:
         self.procedure = TestDataMeasurementFolder()
-        self.procedure._setup(None)
 
         self.procedure.readers = []
 
@@ -886,7 +881,6 @@ class TestMeasurementProcedureReaders(du.UpdatableConfigTest):
     def setUp(self) -> None:
         """Set up for reader tests."""
         self.procedure = TestDataMeasurementFolder()
-        self.procedure._setup(None)
         self.procedure.readers = []
         super().setUp()
 

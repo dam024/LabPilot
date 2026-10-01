@@ -91,7 +91,6 @@ class TestReadersThreads(UpdatableConfigTest):
 
         # Run all the loops
         for reader in self.readers:
-            reader._setup(None)
             self.assertTrue(reader.start())
 
         time.sleep(0.1)
@@ -122,7 +121,6 @@ class TestReadersThreads(UpdatableConfigTest):
 
             def __init__(self, *args, max_rows: int = 1000, **kwargs):
                 super().__init__(*args, max_rows=max_rows, **kwargs)
-                self._setup(None)
                 self.number_loops = 0
 
             def pull_data(self) -> np.ndarray:

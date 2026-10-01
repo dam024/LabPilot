@@ -106,7 +106,7 @@ class MainWindow(QMainWindow, BindingSupport):
         self.mainGuiLoop = mainGUIloop
 
         # Setup the bindigs
-        self._setup(self)
+        self.set_window(self)
 
         self.views_dic = {view.name: view for view in self.views}
 
@@ -303,7 +303,7 @@ class MainWindow(QMainWindow, BindingSupport):
         ###### Status interface (fix)
         self.status_interface = internal_params.StatusInterface()
 
-        self.status_interface._setup(window=self)
+        self.status_interface.set_window(window=self)
         widget = self.status_interface.create_widget(frame=general_infos, view=None)
 
         general_layout.addWidget(widget)
@@ -333,7 +333,7 @@ class MainWindow(QMainWindow, BindingSupport):
             frame.setLayout(frame_layout)
 
             for param in self.default_parametrables + view.get_parametrables():
-                param._setup(window=self)
+                param.set_window(window=self)
                 widget = param.create_widget(frame=frame, view=view)
 
                 frame_layout.addWidget(widget)

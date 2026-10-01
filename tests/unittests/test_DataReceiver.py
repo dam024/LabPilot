@@ -127,7 +127,6 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
 
         def __init__(self, refresh_delay: float = 0):
             super().__init__(refresh_delay)
-            self._setup(None)
 
         def pull_data(self) -> np.ndarray:
             return np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
@@ -436,7 +435,6 @@ class TestLiveReaderLifecycle(tu.UpdatableConfigTest):
 
     def setUp(self) -> None:
         self.reader = self.TestLifecycleReader()
-        self.reader._setup(None)
         return super().setUp()
 
     def test_start_reader_success(self):
@@ -480,7 +478,6 @@ class TestLiveReaderSimulation(tu.UpdatableConfigTest):
 
     def setUp(self) -> None:
         self.reader = self.TestSimulationReader()
-        self.reader._setup(None)
         return super().setUp()
 
     def test_start_reader_in_simulation(self):
@@ -970,7 +967,6 @@ class TestInheritance(tu.UpdatableConfigTest):
     def test_streamreader_can_be_used_as_livedatareader(self):
         """Test that StreamDataReader can be used as LiveDataReader."""
         reader = dc.TestStreamer()
-        reader._setup(None)
         reader.name = "Test"
         reader.dirname = "test"
 
@@ -1024,7 +1020,6 @@ class TestReaderStatusLifecycle(tu.UpdatableConfigTest):
     def test_status_transitions(self):
         """Test status transitions through lifecycle."""
         reader = self.StatusTestReader()
-        reader._setup(None)  # Need to instantiate the Bindings
 
         # Initially not running
         self.assertEqual(reader.status.get(), ReaderStatus.NOT_RUNNING)
@@ -1094,7 +1089,6 @@ class TestReaderConfigSimulation(tu.UpdatableConfigTest):
 
     def setUp(self) -> None:
         self.reader = self.ConfigTestReader()
-        self.reader._setup(None)
 
         return super().setUp()
 
