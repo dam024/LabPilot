@@ -233,26 +233,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
 
         try:
             while not stop_event.is_set():
-                self._data_collection_step()
-
-                # Wait before the next loop
-                if config.simulation:
-                    stop_event.wait(0.3)
-                else:
-                    delay = self.refresh_delay
-
-                    # Check if I need to use the refresh_delay of the view (if defined, overcome the one of the reader)
-                    if (
-                        self.window is not None
-                        and self.window.active_view.refresh_delay is not None
-                    ):
-                        delay = self.window.active_view.refresh_delay
-
-                    # Wait for the appropriate amount of time
-                    if isinstance(delay, CBinding):
-                        stop_event.wait(delay.get())
-                    else:
-                        stop_event.wait(delay)
+                self._reader_event_loop_step(stop_event)
         except Exception as e:
             self.status = ReaderStatus.ERROR
             # print(e)
@@ -260,6 +241,44 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
             traceback.print_exception(e)
         finally:
             self.stop_reader()
+
+    def _reader_event_loop_step(self, stop_event: threading.Event):
+        """Executes a step of data collection and then wait for an appropriate amount of time.
+
+        Note:
+            See `_data_collection_step` for more information
+
+        """
+        start_time = time.perf_counter()
+        self._data_collection_step()
+
+        # Wait before the next loop
+        if config.simulation:
+            stop_event.wait(0.3)
+        else:
+            delay = self.refresh_delay
+
+            # Check if I need to use the refresh_delay of the view (if defined, overcome the one of the reader)
+            if (
+                self.window is not None
+                and self.window.active_view.refresh_delay is not None
+            ):
+                delay = self.window.active_view.refresh_delay
+
+            # Get the delay
+            # Wait for the appropriate amount of time
+            if isinstance(delay, CBinding):
+                # stop_event.wait(delay.get())
+                d = delay.get()
+            else:
+                # stop_event.wait(delay)
+                d = delay
+
+            end_time = time.perf_counter()
+            # Compute the time that was required to read the data from the loop, so that we can substract is from the total wait time
+            collection_time = end_time - start_time
+            if d < collection_time:
+                stop_event.wait(collection_time - d)
 
     def _data_collection_step(self):
         """

@@ -3,6 +3,8 @@ from setuptools.command.build_py import build_py
 from pathlib import Path
 import shutil
 
+ROOT = Path(__file__).resolve().parent
+
 
 class BuildPy(build_py):
     def run(self):
@@ -10,7 +12,7 @@ class BuildPy(build_py):
 
         # Copy the test files
         files = ["views.py", "readers.py", "analysis.py", "config.ini"]
-        src = Path("src")
+        src = ROOT / Path("src")
 
         for f in files:
             path = src / f
@@ -42,10 +44,10 @@ setup(
         "tqdm>=4.70.0",
         "typing_extensions>=4.16.0",
     ],
-    python_require=">=3.13",
+    python_requires=">=3.13",
     options={
         "egg_info": {
-            "egg_base": "build",
+            "egg_base": str(ROOT / "build"),
         },
     },
     extras_require={
