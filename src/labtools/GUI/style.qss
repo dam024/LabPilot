@@ -1,0 +1,372 @@
+/*
+ * macOS Design System for Qt Widgets / PySide6
+ *
+ * Philosophy:
+ *   - Keep Qt's native macOS QStyle in charge of controls.
+ *   - Add semantic typography and semantic color roles through dynamic
+ *     properties rather than restyling buttons, fields, menus, etc.
+ *
+ * Dynamic properties used by this file:
+ *
+ *   textStyle:
+ *     largeTitle, title1, title2, title3, headline, body,
+ *     callout, subheadline, footnote, caption1, caption2
+ *
+ *   emphasized:
+ *     true / false
+ *
+ *   foregroundRole:
+ *     primary, secondary, tertiary, quaternary, disabled,
+ *     text, placeholder, link, selectedText, controlText,
+ *     disabledControlText, headerText, selectedMenuItemText,
+ *     accent, separator, keyboardFocusIndicator
+ *
+ *   backgroundRole:
+ *     windowBackground, controlBackground, textBackground,
+ *     selectedTextBackground, selectedContentBackground,
+ *     unemphasizedSelectedTextBackground,
+ *     unemphasizedSelectedContentBackground,
+ *     controlColor, selectedControlColor,
+ *     systemFill, secondarySystemFill, tertiarySystemFill,
+ *     quaternarySystemFill, grid
+ *
+ * IMPORTANT:
+ *   Apple semantic colors are dynamic and can vary with appearance,
+ *   accessibility settings, accent color, and vibrancy. Qt QSS cannot
+ *   directly address NSColor/SwiftUI Color semantic values, so this file
+ *   maps them to the corresponding roles exposed by Qt's current palette.
+ *   This preserves light/dark adaptation and native Qt integration, but
+ *   is a semantic approximation rather than a byte-for-byte NSColor map.
+ *
+ * Sources:
+ *   Apple HIG — Typography, macOS built-in text styles
+ *   Apple AppKit — NSFont.TextStyle / UI element colors
+ *   Qt 6 — Style Sheet Reference / Palette roles
+ */
+
+/* ====================================================================== */
+/* Typography                                                            */
+/* ====================================================================== */
+
+/* Apple macOS built-in text styles: default/Large Dynamic Type size. */
+
+*[textStyle="largeTitle"] {
+    font-size: 26pt;
+    font-weight: 400;
+}
+
+*[textStyle="title1"] {
+    font-size: 22pt;
+    font-weight: 400;
+}
+
+*[textStyle="title2"] {
+    font-size: 17pt;
+    font-weight: 400;
+}
+
+*[textStyle="title3"] {
+    font-size: 15pt;
+    font-weight: 400;
+}
+
+/* macOS HIG defines headline as bold, with heavy emphasis. */
+*[textStyle="headline"] {
+    font-size: 13pt;
+    font-weight: 700;
+}
+
+*[textStyle="body"] {
+    font-size: 13pt;
+    font-weight: 400;
+}
+
+*[textStyle="callout"] {
+    font-size: 12pt;
+    font-weight: 400;
+}
+
+*[textStyle="subheadline"] {
+    font-size: 11pt;
+    font-weight: 400;
+}
+
+*[textStyle="footnote"] {
+    font-size: 10pt;
+    font-weight: 400;
+}
+
+*[textStyle="caption1"] {
+    font-size: 10pt;
+    font-weight: 400;
+}
+
+*[textStyle="caption2"] {
+    font-size: 10pt;
+    font-weight: 500;
+}
+
+/* Apple's emphasized weights for the same semantic styles. */
+*[textStyle="largeTitle"][emphasized="true"] {
+    font-weight: 700;
+}
+
+*[textStyle="title1"][emphasized="true"] {
+    font-weight: 700;
+}
+
+*[textStyle="title2"][emphasized="true"] {
+    font-weight: 700;
+}
+
+*[textStyle="title3"][emphasized="true"] {
+    font-weight: 600;
+}
+
+*[textStyle="headline"][emphasized="true"] {
+    font-weight: 800;
+}
+
+*[textStyle="body"][emphasized="true"] {
+    font-weight: 600;
+}
+
+*[textStyle="callout"][emphasized="true"] {
+    font-weight: 600;
+}
+
+*[textStyle="subheadline"][emphasized="true"] {
+    font-weight: 600;
+}
+
+*[textStyle="footnote"][emphasized="true"] {
+    font-weight: 600;
+}
+
+*[textStyle="caption1"][emphasized="true"] {
+    font-weight: 500;
+}
+
+*[textStyle="caption2"][emphasized="true"] {
+    font-weight: 600;
+}
+
+/* ====================================================================== */
+/* Apple semantic foreground colors                                      */
+/* ====================================================================== */
+
+/* SwiftUI Color.primary / AppKit labelColor */
+*[foregroundRole="primary"] {
+    color: palette(window-text);
+}
+
+/* SwiftUI Color.secondary / AppKit secondaryLabelColor */
+*[foregroundRole="secondary"] {
+    color: palette(mid);
+}
+
+/* AppKit tertiaryLabelColor */
+*[foregroundRole="tertiary"] {
+    color: palette(midlight);
+}
+
+/* AppKit quaternaryLabelColor */
+*[foregroundRole="quaternary"] {
+    color: palette(light);
+}
+
+/* AppKit disabledControlTextColor */
+*[foregroundRole="disabled"] {
+    color: palette(mid);
+}
+
+/* AppKit textColor */
+*[foregroundRole="text"] {
+    color: palette(text);
+}
+
+/* AppKit placeholderTextColor */
+*[foregroundRole="placeholder"] {
+    color: palette(placeholder-text);
+}
+
+/* AppKit linkColor / Qt link palette role */
+*[foregroundRole="link"] {
+    color: palette(link);
+}
+
+/* AppKit selectedTextColor */
+*[foregroundRole="selectedText"] {
+    color: palette(highlighted-text);
+}
+
+/* AppKit controlTextColor */
+*[foregroundRole="controlText"] {
+    color: palette(button-text);
+}
+
+/* AppKit disabledControlTextColor */
+*[foregroundRole="disabledControlText"] {
+    color: palette(mid);
+}
+
+/* AppKit headerTextColor */
+*[foregroundRole="headerText"] {
+    color: palette(window-text);
+}
+
+/* AppKit selectedMenuItemTextColor */
+*[foregroundRole="selectedMenuItemText"] {
+    color: palette(highlighted-text);
+}
+
+/* SwiftUI Color.accentColor / AppKit controlAccentColor */
+*[foregroundRole="accent"] {
+    color: palette(highlight);
+}
+
+/* AppKit separatorColor / quaternaryLabelColor approximation */
+*[foregroundRole="separator"] {
+    color: palette(mid);
+}
+
+/* AppKit keyboardFocusIndicatorColor approximation */
+*[foregroundRole="keyboardFocusIndicator"] {
+    color: palette(highlight);
+}
+
+/* ====================================================================== */
+/* Apple semantic background / fill colors                               */
+/* ====================================================================== */
+
+/* AppKit windowBackgroundColor */
+*[backgroundRole="windowBackground"] {
+    background-color: palette(window);
+}
+
+/* AppKit controlBackgroundColor / Qt Base */
+*[backgroundRole="controlBackground"] {
+    background-color: palette(base);
+}
+
+/* AppKit textBackgroundColor */
+*[backgroundRole="textBackground"] {
+    background-color: palette(base);
+}
+
+/* AppKit selectedTextBackgroundColor */
+*[backgroundRole="selectedTextBackground"] {
+    background-color: palette(highlight);
+}
+
+/* AppKit selectedContentBackgroundColor */
+*[backgroundRole="selectedContentBackground"] {
+    background-color: palette(highlight);
+}
+
+/* AppKit unemphasizedSelectedTextBackgroundColor */
+*[backgroundRole="unemphasizedSelectedTextBackground"] {
+    background-color: palette(midlight);
+}
+
+/* AppKit unemphasizedSelectedContentBackgroundColor */
+*[backgroundRole="unemphasizedSelectedContentBackground"] {
+    background-color: palette(midlight);
+}
+
+/* AppKit controlColor */
+*[backgroundRole="controlColor"] {
+    background-color: palette(button);
+}
+
+/* AppKit selectedControlColor */
+*[backgroundRole="selectedControlColor"] {
+    background-color: palette(highlight);
+}
+
+/* AppKit systemFill */
+*[backgroundRole="systemFill"] {
+    background-color: palette(mid);
+}
+
+/* AppKit secondarySystemFill */
+*[backgroundRole="secondarySystemFill"] {
+    background-color: palette(midlight);
+}
+
+/* AppKit tertiarySystemFill */
+*[backgroundRole="tertiarySystemFill"] {
+    background-color: palette(light);
+}
+
+/* AppKit quaternarySystemFill */
+*[backgroundRole="quaternarySystemFill"] {
+    background-color: palette(alternate-base);
+}
+
+/* AppKit gridColor */
+*[backgroundRole="grid"] {
+    background-color: palette(mid);
+}
+
+/* ====================================================================== */
+/* Useful semantic widget combinations                                   */
+/* ====================================================================== */
+
+/* A standard secondary/body label. */
+QLabel[textStyle="body"][foregroundRole="secondary"] {
+    font-size: 13pt;
+    font-weight: 400;
+}
+
+/* A common section-heading recipe. */
+QLabel[textStyle="headline"][foregroundRole="primary"] {
+    font-size: 13pt;
+    font-weight: 700;
+}
+
+/* Caption text is often secondary in macOS interfaces. */
+QLabel[textStyle="caption1"][foregroundRole="secondary"],
+QLabel[textStyle="caption2"][foregroundRole="secondary"] {
+    font-weight: 400;
+}
+
+/* ====================================================================== */
+/* Optional convenience properties                                       */
+/* ====================================================================== */
+
+/* Make links look and behave like AppKit links when applied to labels. */
+QLabel[foregroundRole="link"] {
+    text-decoration: underline;
+}
+
+/* A subtle separator widget. */
+QFrame[backgroundRole="grid"] {
+    border: none;
+}
+
+/* ====================================================================== */
+/* Notes                                                                  */
+/* ====================================================================== */
+
+/*
+ * Usage example (PySide6):
+ *
+ *     label.setProperty("textStyle", "title1")
+ *     label.setProperty("foregroundRole", "primary")
+ *
+ *     subtitle.setProperty("textStyle", "body")
+ *     subtitle.setProperty("foregroundRole", "secondary")
+ *
+ *     panel.setProperty("backgroundRole", "controlBackground")
+ *
+ * Dynamic properties should preferably be assigned before the style sheet
+ * is installed. If they are changed afterwards, force a style refresh:
+ *
+ *     w.style().unpolish(w)
+ *     w.style().polish(w)
+ *     w.update()
+ *
+ * This file intentionally does NOT style QPushButton, QLineEdit, QComboBox,
+ * etc. globally. Native macOS QStyle should continue to draw those controls.
+ */

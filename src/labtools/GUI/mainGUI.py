@@ -30,7 +30,6 @@ from labtools.GUI.objects import GUILogArea, GraphCanvas
 
 from labtools import logger, config, globalState
 from labtools.data_management.local_storage import LocalStorage
-from labtools.data_management.measurement_information import RecordingInfos
 
 import labtools.utils as utils
 

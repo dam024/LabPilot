@@ -6,6 +6,8 @@ from pathlib import Path
 from labtools import config
 from labtools.GUI.binding import BindingSupport
 from labtools.data_management.local_storage import LocalStorage
+from labtools.recording_manager import RecordingManager
+from labtools._logging import logger
 
 
 class UpdatableConfigTest(unittest.TestCase):
@@ -23,6 +25,10 @@ class UpdatableConfigTest(unittest.TestCase):
         Returns:
             None
         """
+        # print(self.__class__.__name__)
+        self.assertEqual(
+            len(logger.handlers), 0, f"All log handlers must be deleted for this!!!"
+        )
         self.config: List[Tuple[str, str, str]] = []
         self.assertFalse(config.simulation)
         self.assertFalse(config.use_gui)
@@ -74,6 +80,11 @@ class UpdatableConfigTest(unittest.TestCase):
             db.__del__()
             del db
             shutil.rmtree(Path(path))
+
+        # Reset the RecordingManager
+        RecordingManager._main = None
+
+        self.assertFalse(RecordingManager.main().is_recording)
 
         return super().tearDown()
 

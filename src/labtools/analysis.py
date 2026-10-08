@@ -61,7 +61,6 @@ from PySide6.QtWidgets import QWidget
 from labtools import logger
 from labtools.GUI.binding import Binding
 from labtools.GUI.objects import NumericalValueInput
-from labtools.data_management.measurement_information import MeasurementInfos
 import labtools.utils as utils
 import labtools.DataReceiver as dr
 import labtools.plots.plots as plots
@@ -518,7 +517,7 @@ class DataAnalysis(GUIParametrable):
         # and then call the `update_data()` method from the corresponding `GraphSet` object
         pass
 
-    def plot_generation(self, infos: MeasurementInfos) -> List[plots.GraphSet]:
+    def plot_generation(self, infos) -> List[plots.GraphSet]:
         """
         Allows for the generation of extra plots during the post processing.
 
@@ -528,6 +527,7 @@ class DataAnalysis(GUIParametrable):
         Returns:
             List[plots.GraphSet]: Empty list by default. Override to return custom plots.
         """
+        ## ToDo: Give the correct type to the infos parameter and adapt to the use case...
         return []
 
 

@@ -14,7 +14,7 @@ from labtools.GUI.parameters import GUIParametrable, GUIParameter
 import labtools.GUI.objects as objects
 
 from labtools.analysis import View
-from labtools.data_management.measurement_information import RecordingInfos
+from labtools.recording_manager import RecordingManager
 import labtools.measurement_procedure as mp
 
 
@@ -134,76 +134,17 @@ class ApplicationParameters(GUIParametrable):
             return
 
         if self.is_recording.get():
-            globalState.recording = False
-
             self.is_recording = False
             self.recording_button_text = "Record"
 
-            plots_location = os.path.join(
-                config.output_dir_data,
-                globalState.recording_subfolder,
+            # Stop the recording
+            RecordingManager.main().end_recording(
+                self, save_data=True, mainWindow=self.window
             )
-
-            logger.info(f"Path: {plots_location}")
-
-            for canvas in self.window.view_plots[self.window.active_view.name]:
-                canvas.graph.figure.save(
-                    os.path.join(
-                        plots_location,
-                        canvas.graph.filename,
-                    )
-                )
-
-            folder_name, ok = QInputDialog.getText(
-                None,
-                "Recording",
-                "Name of the folder:",
-            )
-
-            if not ok or not folder_name:
-                return
-
-            description, ok = QInputDialog.getText(
-                None,
-                "Recording",
-                "Description:",
-            )
-
-            if not ok:
-                return
-
-            ### NOTE: same code as for the measurement procedure... It must be adapted
-            infos = RecordingInfos()
-
-            infos["description"] = description
-            infos["date"] = str(datetime.datetime.today())
-
-            infos.dump_parameters()
-
-            try:
-                infos.save(
-                    os.path.join(
-                        config.output_dir_data,
-                        globalState.recording_subfolder,
-                    )
-                )
-
-                os.rename(
-                    os.path.join(
-                        config.output_dir_data,
-                        globalState.recording_subfolder,
-                    ),
-                    os.path.join(
-                        config.output_dir_data,
-                        folder_name,
-                    ),
-                )
-            except Exception as e:
-                logger.error(e)
-                traceback.print_exception(e)
 
         else:
-            globalState.recording = True
+            # Start the recording
+            RecordingManager.main().start_recording(self)
 
             self.is_recording = True
             self.recording_button_text = "Stop Recording..."

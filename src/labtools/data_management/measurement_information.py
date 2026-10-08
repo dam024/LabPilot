@@ -1,11 +1,11 @@
-from typing import Any, List, Type
+from typing import Any, Dict, List, Type
 import json
 import os
 from labtools import logger
 from labtools.GUI.binding import BindingSupport
 
 
-class Infos:
+class Infos_:
     def __init__(self) -> None:
         self._values = {}
 
@@ -33,10 +33,12 @@ class Infos:
         self._values[index] = value
 
 
-class ParametrizedInfos(Infos):
+class ParametrizedInfos_(Infos_):
+    parameters: Dict[str, Any]
+
     def __init__(self) -> None:
         super().__init__()
-        self._values["parameters"] = {}
+        # self._values["parameters"] = {}
 
     def _build_key(self, owner: object | Type, key: str) -> str:
         if isinstance(owner, Type):
@@ -46,15 +48,18 @@ class ParametrizedInfos(Infos):
 
     def set_parameter(self, owner: object | Type, key: str, value: Any):
         full_key = self._build_key(owner, key)
-        self._values["parameters"][full_key] = value
+        # self._values["parameters"][full_key] = value
+        self.parameters[full_key] = value
 
     def get_parameter(self, owner: object | Type, key: str) -> object:
         full_key = self._build_key(owner, key)
-        return self._values["parameters"][full_key]
+        # return self._values["parameters"][full_key]
+        return self.parameters[full_key]
 
     def has_param(self, owner: object | Type, key: str) -> bool:
         full_key = self._build_key(owner, key)
-        return full_key in self._values["parameters"]
+        # return full_key in self._values["parameters"]
+        return full_key in self.parameters
 
     def apply_parameters(self):
         """Apply the currently saved parameters to the application"""
@@ -78,69 +83,3 @@ class ParametrizedInfos(Infos):
 
         if apply_parameters:
             self.apply_parameters()
-
-
-# The final system must make sure that all data are given to before saving!
-class MeasurementInfos(Infos):
-    def __init__(self):
-        super().__init__()
-
-
-class Experiment:
-    # Description
-    description: str
-    # Name
-    name: str
-    # Folder name
-    folder_name: str
-
-    """This class represents an experiment. It contains informations about the different sets of measurements. The goal of this entity is to indicate what is the goal of the given set of measurements
-    """
-
-
-class Sample:
-    """Represents a single sample"""
-
-    name: str
-    comment: str
-
-
-class SetupVersion:
-    """Version of the setup"""
-
-    # Name of version
-    version: str
-    # Setup mode
-    mode: str
-    # Description
-    description: str
-
-
-class Measurement(ParametrizedInfos):
-    """A Measurement is a set of recordings on a given sample. These recordings were made on the same shot."""
-
-    # authors
-    authors: List[str]
-    # Date
-    date_start: str
-    date_end: str
-    # Setup version
-    setupVersion: SetupVersion
-    # Experiment
-    experiment: Experiment
-    # Sample
-    sample: Sample
-
-
-class RecordingInfos(ParametrizedInfos):
-    # Recording Procedure. This is the name of the class
-    name: str  # -> unique value!!!!
-    # Description of the recording
-    description: str
-    # List of readers that were recording data
-    readers: List[str]
-    # Time
-    time_start: str
-    time_end: str
-
-    measurement: Measurement

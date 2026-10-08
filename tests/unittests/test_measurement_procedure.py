@@ -27,10 +27,10 @@ from labtools.GUI.objects import ButtonWidget
 import tests.dummy_classes as dc
 import tests.utils as du
 
-from labtools.data_management.measurement_information import (
-    MeasurementInfos,
-    RecordingInfos,
-)
+# from labtools.data_management.measurement_information import (
+#    MeasurementInfos,
+#    RecordingInfos,
+# )
 from labtools.measurement_procedure import (
     MeasurementProcedure,
     StopProcedureRequest,

@@ -13,7 +13,7 @@ from labtools import logger
 import labtools.analysis as ana
 from labtools.GUI.parameters import GUIParameter
 import labtools.GUI.objects as gui_obj
-from labtools.data_management.measurement_information import RecordingInfos
+from labtools.recording_manager import RecordingManager
 from labtools.utils import concurrently
 
 if TYPE_CHECKING:
@@ -101,6 +101,8 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         if self.window is not None and not self.window.is_experiment_running.get():
             self.window.start_updates()
 
+        # Update all the recording informations
+        RecordingManager.main().start_recording(self)
         MeasurementProcedure.procedure_running = True
         MeasurementProcedure.running_procedure = self
         self.execute_stop_event.clear()
@@ -143,16 +145,15 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         path = self.measurement_data_file
         np.save(path, data)
 
-        ### NOTE: same code as for the recording... It must be adapted
-        infos = RecordingInfos()
-
-        infos["description"] = f"Measurement procedure: {self.name}"
-        infos["date"] = str(datetime.datetime.today())
-        infos["is_measurement"] = True
-
-        infos.dump_parameters()
-
-        infos.save(self.measurement_data_folder)
+        # Stop the recording
+        description = f"Measurement procedure: {self.name}"
+        RecordingManager.main().end_recording(
+            self,
+            save_data=True,
+            mainWindow=self.window,
+            foldername=self.dirname,  # self.measurement_data_file,
+            description=description,
+        )
 
     def log_data(self, data: np.ndarray, progress: int | None = None):
         """Call this method when new data are collected during the procedure. You can pass the entire data set. They will then be available when the plots will be refreshed

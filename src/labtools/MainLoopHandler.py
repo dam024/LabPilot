@@ -9,7 +9,6 @@ import threading
 import os
 
 from labtools.data_management.local_storage import LocalStorage
-from labtools.data_management.measurement_information import MeasurementInfos
 import labtools.DataReceiver as dr
 import labtools.analysis as ana
 import labtools.measurement_procedure as mp
