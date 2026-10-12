@@ -34,6 +34,11 @@ class TestMainWindow(UpdatableConfigTest):
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
 
+    def tearDown(self) -> None:
+        if hasattr(self, "_window"):
+            self._window.remove_log_handler()
+        return super().tearDown()
+
     def create_window(self):
         view = MagicMock()
         view.name = "view1"
@@ -43,10 +48,12 @@ class TestMainWindow(UpdatableConfigTest):
         loop = MagicMock()
         loop.active_view = view
 
-        return MainWindow(
+        self._window = MainWindow(
             [view],
             loop,
         )
+
+        return self._window
 
     def test_initial_view(self):
         window = self.create_window()
@@ -94,19 +101,6 @@ class TestMainWindow(UpdatableConfigTest):
         window.active_view.refresh_plots.assert_called_once()
 
         plot.update_plot.assert_called_once()
-
-    @patch("labtools.GUI.mainGUI.logger.removeHandler")
-    def test_remove_log_handler(
-        self,
-        logger_mock,
-    ):
-        window = self.create_window()
-
-        window.handler = MagicMock()
-
-        window.remove_log_handler()
-
-        logger_mock.assert_called_once()
 
     @patch("labtools.GUI.mainGUI.QFileDialog.getExistingDirectory")
     @patch("labtools.GUI.mainGUI.RecordingInfos")

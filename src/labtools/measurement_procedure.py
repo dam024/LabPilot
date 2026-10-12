@@ -8,8 +8,11 @@ import numpy as np
 import os
 from PySide6.QtWidgets import QWidget
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from labtools import config, globalState
-from labtools import logger
 import labtools.analysis as ana
 from labtools.GUI.parameters import GUIParameter
 import labtools.GUI.objects as gui_obj
@@ -51,7 +54,8 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
                 config.output_dir_data, globalState.reading_recording_subfolder
             )
         else:
-            folder = os.path.join(config.output_dir_data, self.dirname)
+            # folder = os.path.join(config.output_dir_data, self.dirname)
+            folder = RecordingManager.main().recording_path
         os.makedirs(folder, exist_ok=True)
 
         return folder
@@ -117,15 +121,30 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     @concurrently
     def _treat_procedure(self, **kwargs):
         """Code that actually executes the procedure"""
-
+        save_data = False
         try:
             data = self.execute()
-
             # Save the data
             if not self.execute_stop_event.is_set():
                 self.save(data)
+                save_data = True
         except StopProcedureRequest:
             pass
+        except Exception as e:
+            logger.error(e)
+            traceback.print_exception(e)
+
+        # Stop the recording
+        description = f"Measurement procedure: {self.name}"
+
+        try:
+            RecordingManager.main().end_recording(
+                self,
+                save_data=save_data,
+                mainWindow=self.window,
+                foldername=self.dirname,
+                description=description,
+            )
         except Exception as e:
             logger.error(e)
             traceback.print_exception(e)
@@ -144,16 +163,6 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         """Saves the data collected during the procedure"""
         path = self.measurement_data_file
         np.save(path, data)
-
-        # Stop the recording
-        description = f"Measurement procedure: {self.name}"
-        RecordingManager.main().end_recording(
-            self,
-            save_data=True,
-            mainWindow=self.window,
-            foldername=self.dirname,  # self.measurement_data_file,
-            description=description,
-        )
 
     def log_data(self, data: np.ndarray, progress: int | None = None):
         """Call this method when new data are collected during the procedure. You can pass the entire data set. They will then be available when the plots will be refreshed

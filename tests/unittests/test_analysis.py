@@ -3,7 +3,7 @@ import unittest
 from PySide6.QtWidgets import QApplication
 import numpy as np
 
-from labtools.data_management.measurement_information import MeasurementInfos
+from labtools.data_management.datamodel import Recording
 import tests.dummy_classes as dc
 
 import labtools.analysis as ana
@@ -257,7 +257,7 @@ class TestDataAnalysis(tu.UpdatableConfigTest):
         self.assertTrue(hasattr(analysis, "plot_generation"))
 
         # It should return a list
-        result = analysis.plot_generation(MeasurementInfos())
+        result = analysis.plot_generation(Recording())
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 0)
 

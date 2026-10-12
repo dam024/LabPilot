@@ -10,8 +10,12 @@ from pyqtgraph.exporters import ImageExporter
 from pyqtgraph.graphicsItems.ViewBox import ViewBox
 from pyqtgraph.widgets.PlotWidget import PlotItem
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 import labtools.plots.plot_backend as pb
-from labtools import logger, config
+from labtools import config
 
 
 _LINESTYLES = {

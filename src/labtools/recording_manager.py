@@ -1,13 +1,18 @@
 from __future__ import annotations
 import os
-from typing import TYPE_CHECKING
+import traceback
+from typing import TYPE_CHECKING, List
 
 from PySide6.QtWidgets import QInputDialog
 from sqlalchemy.engine.default import datetime
 
-from labtools import logger
+import logging
+
+logger = logging.getLogger(__name__)
+from labtools import config
 from labtools.data_management.database_manager import DB
 from labtools.data_management.datamodel import Recording
+from labtools.data_management.measurement_information import RecordingInfos
 
 if TYPE_CHECKING:
     from labtools.GUI.mainGUI import MainWindow
@@ -45,6 +50,7 @@ class RecordingManager:
 
         RecordingManager._main = self
         self.recorder = None
+        self.measurement_id: int | None = None
 
     @property
     def is_recording(self) -> bool:
@@ -56,6 +62,12 @@ class RecordingManager:
         """Folder where to save the collected data"""
         return self._recording_subfolder
 
+    @property
+    def recording_path(self) -> str:
+        """Returns the folder where the current recordings are"""
+        path = os.path.join(config.output_dir_data, self.recording_subfolder)
+        return path
+
     @classmethod
     def main(cls) -> "RecordingManager":
         if RecordingManager._main is None:
@@ -63,14 +75,15 @@ class RecordingManager:
 
         return RecordingManager._main
 
-    def start_recording(self, recorder: object) -> Recording:
+    def start_recording(self, recorder: object) -> RecordingInfos:
         if self.is_recording:
             raise RMRecordingInProgress(
                 f"{recorder.__class__.__name__} is already recording data. You cannot start a new recording!!!"
             )
 
         self.recorder = recorder
-        self._recording = Recording(start=datetime.datetime.now())
+        self._recording = RecordingInfos()
+        self._recording["start"] = datetime.datetime.now()
 
         return self._recording
 
@@ -81,10 +94,14 @@ class RecordingManager:
         mainWindow: MainWindow | None = None,
         foldername: str | None = None,
         description: str | None = None,
-    ) -> Recording | None:
-        if not self.is_recording or self.recorder != calling or self._recording is None:
+    ) -> RecordingInfos | None:
+        if (
+            not self.is_recording
+            or self.recorder is not calling
+            or self._recording is None
+        ):
             raise RMNoRecording(
-                f"{calling.__class__.__name__} requested to stop a recording it hasn't started! "
+                f"{calling.__class__.__name__} requested to stop a recording it hasn't started!"
             )
         recording = self._recording
         self._recording = None
@@ -93,13 +110,10 @@ class RecordingManager:
         # Stop if we're not saving the data
         if not save_data:
             return None
-        raise NotImplementedError("...")
+
         # Save the plots if the mainWindow is given
         if mainWindow:
-            plots_location = os.path.join(
-                config.output_dir_data,
-                globalState.recording_subfolder,
-            )
+            plots_location = self.recording_path
             for canvas in mainWindow.view_plots[mainWindow.active_view.name]:
                 canvas.graph.figure.save(
                     os.path.join(
@@ -108,8 +122,18 @@ class RecordingManager:
                     )
                 )
 
+            # Find the readers
+            r: List[str] = []
+            for reader in mainWindow.mainGuiLoop.readers:
+                if reader.is_running:
+                    r.append(reader.name)
+
+            recording["readers"] = f"[{", ".join(r)}]"
+        else:
+            recording["readers"] = "[]"
+
         # Fill the missing values
-        recording.end = datetime.datetime.now()
+        recording["end"] = datetime.datetime.now()
 
         if not foldername:
             foldername, ok = QInputDialog.getText(
@@ -122,7 +146,7 @@ class RecordingManager:
                 return
 
         if description:
-            recording.description = description
+            recording["description"] = description
         else:
             description, ok = QInputDialog.getText(None, "Recording", "Description:")
 
@@ -130,34 +154,30 @@ class RecordingManager:
             if not ok:
                 return None
 
-            recording.description = description
+            recording["description"] = description
 
         recording.dump_parameters()
-        raise NotImplementedError("Need to register the `Measurement` property")
-        recording.measurement = ...
 
+        ## TODO: Set the measurement_id!!!
+        recording["measurement_id"] = self.measurement_id
+
+        # Save the recording informations
         with DB() as session:
-            session.add(recording)
+            rec = recording.as_recording(session)
+            session.add(rec)
 
         # Save the data in the json file
         try:
+            os.makedirs(self.recording_path, exist_ok=True)
             # Save the recording information
-            recording.save(
-                os.path.join(
-                    config.output_dir_data,
-                    globalState.recording_subfolder,
-                )
-            )
+            recording.save(self.recording_path)
 
             # Rename the folder so that it doesn't get overriden
             os.rename(
+                self.recording_path,
                 os.path.join(
                     config.output_dir_data,
-                    globalState.recording_subfolder,
-                ),
-                os.path.join(
-                    config.output_dir_data,
-                    folder_name,
+                    foldername,
                 ),
             )
         except Exception as e:

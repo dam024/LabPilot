@@ -21,14 +21,20 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+from labtools._logging import ConsoleLogger
 import labtools.analysis as ana
 import labtools.MainLoopHandler as mainLoop
 import labtools.GUI.internal_parameters as internal_params
 from labtools.GUI.binding import Binding, Status, BindingSupport
+from labtools.data_management.measurement_information import RecordingInfos
 
 from labtools.GUI.objects import GUILogArea, GraphCanvas
 
-from labtools import logger, config, globalState
+from labtools import config, globalState
 from labtools.data_management.local_storage import LocalStorage
 
 import labtools.utils as utils
@@ -249,17 +255,20 @@ class MainWindow(QMainWindow, BindingSupport):
 
     def add_log_handler(self):
         """Adds a log handler to be able to show the logs on the small message box"""
+        # Get the app logger
+        app_logger = ConsoleLogger.get_app_logger()
         self.handler = GUILogHandler()
         self.handler.logArea = self.logArea
         formatter = logging.Formatter("%(levelname)s: %(message)s")
 
         self.handler.setFormatter(formatter)
-        self.handler.setLevel(logger.get_level())
+        self.handler.setLevel(app_logger.get_level())
 
-        logger.addHandler(self.handler)
+        if self.handler not in app_logger.handlers:
+            app_logger.addHandler(self.handler)
 
     def remove_log_handler(self):
-        logger.removeHandler(self.handler)
+        ConsoleLogger.get_app_logger().removeHandler(self.handler)
 
     # --------------------------------------------------
     # Sidebar

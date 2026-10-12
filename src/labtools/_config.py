@@ -36,6 +36,11 @@ class GeneralConfig(configparser.ConfigParser):
         return self.get("GENERAL", "plots_output_dir")
 
     @property
+    def database_url(self) -> str:
+        """Returns the URL that will allow connexion to the database"""
+        return self.get("DATABASE", "database_url")
+
+    @property
     def experiment_name(self):
         return self.get("GENERAL", "experiment_folder")
 
@@ -45,6 +50,8 @@ class GeneralConfig(configparser.ConfigParser):
 
     @property
     def show_errors(self) -> bool:
+        if not self.use_gui:
+            return False
         return self.get("GENERAL", "error_alert") == "true"
 
 

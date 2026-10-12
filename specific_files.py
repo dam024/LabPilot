@@ -3,6 +3,10 @@ from typing import Any, Callable, Iterable, List
 import random
 import PySide6.QtWidgets as qt
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from labtools.DataReceiver import (
     LiveDataReader,
     ProcessedData,
@@ -12,7 +16,6 @@ import labtools.plots.plot_backend as pb
 import labtools.plots.plots_implementation as plots
 import labtools.GUI.objects as gui_obj
 from labtools.GUI.binding import Binding, CBinding
-from labtools import logger
 import labtools.analysis as ana
 import labtools.measurement_procedure as mp
 

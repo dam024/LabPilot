@@ -1,9 +1,11 @@
 from __future__ import annotations
 import argparse
-import labtools._config as config
 import unittest
 import os
-from labtools import logger, utils
+import logging
+from labtools._logging import ConsoleLogger, setup_logging
+from labtools import utils
+import labtools._config as config
 
 
 ### Optimization:
@@ -190,6 +192,14 @@ def main():
         if args.disk_data:
             config.generalConfig.simulation = True
 
+    # Setup up logging
+    logger = setup_logging(level=logging.INFO)
+
+    import labtools
+
+    # To make sure we are using the main logger!
+    assert logger.name == labtools.__name__
+
     ## Importing project modules
     from labtools.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
     from labtools.GUI.mainGUI import MainGUILoop
@@ -203,6 +213,7 @@ def main():
 
         # Remove all the handlers to avoid printing in the console...
         logger.clear_handlers()
+        logging.disable(logging.CRITICAL)
         # Run unit tests
         run_tests_in_directory(os.path.join(os.getcwd(), "tests"), args.test_module)
     # Other commands

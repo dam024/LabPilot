@@ -2,11 +2,15 @@ from __future__ import annotations
 from typing import Iterable, List
 import time
 
+# Add this code in your file if you want the logs to appear in the log area in the window
+import labtools
+
+logger = labtools.getLogger(__name__)
+
 import labtools.plots.plot_backend as pb
 import labtools.plots.plots_implementation as plots
 import labtools.GUI.objects as gui_obj
 from labtools.GUI.binding import Binding
-from labtools import logger
 import labtools.analysis as ana
 import labtools.measurement_procedure as mp
 

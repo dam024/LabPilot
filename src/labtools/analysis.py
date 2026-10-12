@@ -55,10 +55,14 @@ from abc import abstractmethod
 import functools
 from types import ModuleType
 from typing import TYPE_CHECKING, Callable, Any, Dict, List, Type
+from labtools.data_management.datamodel import Recording
 import numpy as np
 from PySide6.QtWidgets import QWidget
 
-from labtools import logger
+import logging
+
+logger = logging.getLogger(__name__)
+
 from labtools.GUI.binding import Binding
 from labtools.GUI.objects import NumericalValueInput
 import labtools.utils as utils
@@ -517,7 +521,7 @@ class DataAnalysis(GUIParametrable):
         # and then call the `update_data()` method from the corresponding `GraphSet` object
         pass
 
-    def plot_generation(self, infos) -> List[plots.GraphSet]:
+    def plot_generation(self, infos: Recording) -> List[plots.GraphSet]:
         """
         Allows for the generation of extra plots during the post processing.
 

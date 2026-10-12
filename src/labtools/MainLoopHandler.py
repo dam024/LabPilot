@@ -8,11 +8,14 @@ import numpy as np
 import threading
 import os
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from labtools.data_management.local_storage import LocalStorage
 import labtools.DataReceiver as dr
 import labtools.analysis as ana
 import labtools.measurement_procedure as mp
-from labtools import logger
 from labtools import config, globalState
 import labtools._tools.dynamic_imports as tools
 

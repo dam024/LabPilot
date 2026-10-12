@@ -2,7 +2,7 @@ import copy
 import abc
 import os
 import traceback
-from typing import Any, Callable, Type, List
+from typing import Any, Callable, Dict, Tuple, Type, List
 import queue
 from PySide6.QtWidgets import QMainWindow
 import numpy as np
@@ -206,11 +206,34 @@ class AbstractProperties(abc.ABC):
 
 
 class TestThreadExecutor:
+    """Test thread executor designed to run for tests. Do not use in production code!!!"""
+
     def __init__(self) -> None:
-        pass
+        self.queue: queue.Queue[
+            Tuple[Callable, Tuple[Any, ...], Dict[str, Tuple[Any, ...]]]
+        ] = queue.Queue()
 
     def call(self, func, *args, **kwargs):
-        func(*args, **kwargs)
+        self.queue.put_nowait((func, args, kwargs))
+
+    def main_thread_execute(self):
+        """Executes all the methods that are in the queue and must be executed from the  main thread.
+
+        Note:
+            You must execute this method from a main thread!
+        """
+        assert (
+            threading.current_thread().name == threading.main_thread().name
+        ), f"You must call this method from the main thread only!"
+
+        while not self.queue.empty():
+            func, args, kwargs = self.queue.get_nowait()
+
+            func(*args, **kwargs)
+
+    def has_main_thread_func(self) -> bool:
+        """Returns a boolean indicating if some functions needs to be executed from the main thread"""
+        return not self.queue.empty()
 
 
 class MainThreadExecutor:
@@ -272,12 +295,39 @@ def threadSafe(func: Callable):
     return wrapper
 
 
-def concurrently(func):
+def concurrently(func: Callable):
     """Apply this method decorator to execute the current method concurrently
-
 
     Note:
         The method will be executed on a background thread!
+        If you call this method from a background thread, it will be executed on a new thread
+
+    Args:
+        func (Callable): Function/method to execute concurrently
+
+    Returns:
+        ThreadPoolExecutor: The thread pool executor that will run the given method
+
+    Example:
+    ```python
+
+    @concurrently
+    def background_function(any_parameter):
+        ...
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    @concurrently
+    def background_function2(any_parameter, threadPool: ThreadPoolExecutor):
+        # You can set the special `threadPool` parameter to access the current thread executor!
+        ...
+
+    # You can access the threadPool to get the return value of the function if necessary. See https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
+    thread_ppol = background_function(any_parameter = 'Hello World!')
+
+
+
+    ```
     """
 
     @functools.wraps(func)
@@ -291,7 +341,10 @@ def concurrently(func):
 
         # Check the signature
         sig = inspect.signature(func)
-        if not sig.bind(*args, **kwargs):
+        try:
+            sig.bind(*args, **kwargs)
+        except TypeError:
+            # If we get a type error, it means that the functionn does not take `threadPool` argument
             del kwargs["threadPool"]
         future = pool.submit(execute, *args, **kwargs)
 

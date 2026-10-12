@@ -41,7 +41,7 @@ class TestRecordingInfos(tu.UpdatableConfigTest):
         self.assertEqual(b.value.get(), 5)
 
     def test_recording_info_save_with_deleted_bindings(self):
-        """Test that if I deleate an instance of a Binding that wasn't setup, it won't cause an error while dumping the parameters"""
+        """Test that if I delete an instance of a Binding that wasn't setup, it won't cause an error while dumping the parameters"""
 
         # Defines two classes
         class TestBindingSupport(BindingSupport):

@@ -1,7 +1,15 @@
 from types import TracebackType
-from typing import Any, Callable, Generic, Type, TypeVar
+from typing import Any, Callable, Generic, Type, TypeVar, Dict
+import os
+import json
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+import logging
+
+logger = logging.getLogger(__name__)
+from labtools import config
+from labtools.GUI.binding import BindingSupport
 
 
 class Base(DeclarativeBase):
@@ -45,7 +53,8 @@ class DB:
     @classlazyproperty
     def engine(cls) -> Engine:
         """Engine used for the connexion to the database"""
-        eng = create_engine("sqlite:///mydatabase.db", echo=False)
+        logger.info(f"Database: {config.database_url}")
+        eng = create_engine(config.database_url, echo=False)
         return eng
 
     @classlazyproperty
@@ -79,6 +88,9 @@ class DB:
 
             # Close the session
             self.session.close()
+
+            if exc_type:
+                raise exc_type(exc_value)
 
     @classmethod
     def sync_model_with_db(cls):
