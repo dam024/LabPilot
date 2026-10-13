@@ -43,11 +43,6 @@ setup(
         "typing_extensions>=4.16.0",
     ],
     python_require=">=3.13",
-    options={
-        "egg_info": {
-            "egg_base": "build",
-        },
-    },
     extras_require={
         "dev": ["setuptools", "psutil"],
     },
