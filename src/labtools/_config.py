@@ -46,7 +46,8 @@ class GeneralConfig(configparser.ConfigParser):
 
     @property
     def log_level(self):
-        return logging.DEBUG
+        # return logging.INFO
+        return self.get("GENERAL", "log_level", fallback=logging.INFO)
 
     @property
     def show_errors(self) -> bool:

@@ -28,8 +28,11 @@ import time
 
 class TestData(ProcessedData):
     x: np.ndarray
+    """X-component of the vector"""
     y: np.ndarray
+    """Y-component of the vector"""
     z: np.ndarray
+    """Z-component of the vector"""
 
 
 class TestReader(LiveDataReader[TestData]):

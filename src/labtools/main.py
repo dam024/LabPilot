@@ -193,7 +193,7 @@ def main():
             config.generalConfig.simulation = True
 
     # Setup up logging
-    logger = setup_logging(level=logging.INFO)
+    logger = setup_logging(level=logging.DEBUG)
 
     import labtools
 

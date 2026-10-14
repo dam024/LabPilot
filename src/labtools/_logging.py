@@ -144,7 +144,6 @@ class ConsoleLogger(logging.Logger):
 
         # Create console handler
         self.console_handler = logging.StreamHandler(sys.stdout)
-        self.console_handler.setLevel(self.level)
 
         # Set up formatter with color support
         formatter = ColoredFormatter(
@@ -160,10 +159,19 @@ class ConsoleLogger(logging.Logger):
         return super().makeRecord(*args, **kwargs)
 
     def config_logger(self, config: config.GeneralConfig):
+        """Configures the app logger to use the log level setup in config.ini"""
         self.config = config
         log_level = self.config.log_level
 
-        self.setLevel(log_level)
+        app_logger = self.get_app_logger()
+
+        if log_level not in logging.getLevelNamesMapping():
+            raise ValueError(
+                f"Invalid log level set in your config file: \n>>>\t[GENERAL]\n>>>\tlog_level={log_level} # This value is wrong\n Possible values are: {logging.getLevelNamesMapping().keys()}"
+            )
+        exit()
+
+        app_logger.setLevel(log_level)
 
     def newline(self):
         print(f"\n")
@@ -221,19 +229,20 @@ def setup_logging(
         logger = setup_logging(level='DEBUG')
         logger.info('Application started')
     """
-    root = logging.getLogger()
-    root.setLevel(level)
+    # root = logging.getLogger()
+    # root.setLevel(level)
 
     # Configure the app logger
     app_logger = ConsoleLogger.get_app_logger()
 
     # Create
     app_logger._setup_console_handler()
+    # Don't propagate to the root level!
+    app_logger.propagate = False
+    app_logger.setLevel(level)
 
     return app_logger
 
-
-# logger = setup_logging(level=logging.INFO)
 
 # Example usage and demonstration
 if __name__ == "__main__" and False:
