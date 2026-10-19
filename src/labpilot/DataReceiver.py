@@ -549,7 +549,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         the new raw data and returns them as a well-structured numpy array.
 
         Note:
-            This method assumes by default the array to be 2-D. An error will be
+            This method assumes by default the array to be 2-D, with shape (Q, N), Q=Number of measured quantities, N=Number of samples per quantity. An error will be
             thrown if this is not the case! If you need to work with arrays having
             different dimensions, please subclass the `aggregate_data` and implement
             your own data aggregation. If your class is NOT a subclass of `StreamDataReader`,
