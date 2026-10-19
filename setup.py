@@ -54,6 +54,8 @@ setup(
     description="Automatic measurement interface for experiments",
     package_dir={"": "src"},
     packages=find_packages("src"),
+    long_description=(ROOT / "README.md").read_text(encoding="utf-8"),
+    long_description_content_type="text/markdown",
     include_package_data=True,
     install_requires=[
         "colorama>=0.4.0",
