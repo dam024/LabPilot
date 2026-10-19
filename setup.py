@@ -6,27 +6,49 @@ import shutil
 ROOT = Path(__file__).resolve().parent
 
 
+EXAMPLE_FILES = (
+    "views.py",
+    "readers.py",
+    "analysis.py",
+    "config.ini",
+)
+
+
 class BuildPy(build_py):
     def run(self):
         super().run()
 
-        # Copy the test files
-        files = ["views.py", "readers.py", "analysis.py", "config.ini"]
-        src = ROOT / Path("src")
+        src_dir = ROOT / "src"
+        dest_dir = Path(self.build_lib) / "labpilot_data"
 
-        for f in files:
-            path = src / f
+        self.mkpath(str(dest_dir))
 
-            d = Path(self.build_lib) / "labpilot_data"
-            d.mkdir(exist_ok=True)
-            dst = d / f
+        for filename in EXAMPLE_FILES:
+            source = src_dir / filename
+            destination = dest_dir / filename
 
-            shutil.copyfile(path, dst)
+            if not source.is_file():
+                raise FileNotFoundError(f"Required example file not found: {source}")
+
+            self.copy_file(str(source), str(destination))
+
+    def get_source_files(self):
+        return super().get_source_files() + [
+            str(Path("src") / filename) for filename in EXAMPLE_FILES
+        ]
+
+    def get_outputs(self, include_bytecode=1):
+        outputs = super().get_outputs(include_bytecode)
+        outputs.extend(
+            str(Path(self.build_lib) / "labpilot_data" / filename)
+            for filename in EXAMPLE_FILES
+        )
+        return outputs
 
 
 setup(
     name="labpilot",
-    version="0.1.1",
+    version="0.1.0",
     author="Damien Jaccoud",
     author_email="damien.jaccoud@hotmail.com",
     description="Automatic measurement interface for experiments",
@@ -44,7 +66,7 @@ setup(
         "tqdm>=4.70.0",
         "typing_extensions>=4.16.0",
     ],
-    python_require=">=3.13",
+    python_requires=">=3.13",
     extras_require={
         "dev": ["setuptools", "psutil"],
     },
