@@ -44,12 +44,7 @@ setup(
         "tqdm>=4.70.0",
         "typing_extensions>=4.16.0",
     ],
-    python_requires=">=3.13",
-    options={
-        "egg_info": {
-            "egg_base": str(ROOT / "build"),
-        },
-    },
+    python_require=">=3.13",
     extras_require={
         "dev": ["setuptools", "psutil"],
     },
