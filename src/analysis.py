@@ -1,6 +1,6 @@
-import labtools.analysis as ana
-import labtools.plots.plots_implementation as plots
-from labtools.GUI.binding import Binding
+import labpilot.analysis as ana
+import labpilot.plots.plots_implementation as plots
+from labpilot.GUI.binding import Binding
 
 from src.readers import ExampleStreamer
 

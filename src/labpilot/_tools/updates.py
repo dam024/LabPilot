@@ -1,7 +1,7 @@
 from importlib.metadata import version
 import subprocess
 
-from labtools.utils import concurrently
+from labpilot.utils import concurrently
 
 
 def update():
@@ -11,7 +11,7 @@ def update():
         [
             "pip",
             "install",
-            "git+https://github.com/dam024/LabTools.git",
+            "git+https://github.com/dam024/LabPilot.git",
         ],
         capture_output=True,
         text=True,
@@ -27,7 +27,7 @@ def update():
             "install",
             "--force-reinstall",
             "--no-deps",
-            "git+https://github.com/dam024/LabTools.git",
+            "git+https://github.com/dam024/LabPilot.git",
         ],
         capture_output=True,
         text=True,
@@ -39,5 +39,5 @@ def update():
 
 
 def get_version() -> str:
-    """Returns the current version of the `labtools` module"""
-    return version("labtools")
+    """Returns the current version of the `labpilot` module"""
+    return version("labpilot")

@@ -8,14 +8,14 @@ import numpy as np
 import threading
 import os
 
-from labtools.data_management.local_storage import LocalStorage
-from labtools.data_management.measurement_information import MeasurementInfos
-import labtools.DataReceiver as dr
-import labtools.analysis as ana
-import labtools.measurement_procedure as mp
-from labtools import logger
-from labtools import config, globalState
-import labtools._tools.dynamic_imports as tools
+from labpilot.data_management.local_storage import LocalStorage
+from labpilot.data_management.measurement_information import MeasurementInfos
+import labpilot.DataReceiver as dr
+import labpilot.analysis as ana
+import labpilot.measurement_procedure as mp
+from labpilot import logger
+from labpilot import config, globalState
+import labpilot._tools.dynamic_imports as tools
 
 
 class AppHandler(ABC):
@@ -33,7 +33,7 @@ class AppHandler(ABC):
         self.views = tools.get_all_views(
             module_location=config.get("GENERAL", "extra_code"),
             cls_type=ana.View,
-            excluded_modules=["labtools.DataReceiver"],
+            excluded_modules=["labpilot.DataReceiver"],
             exclude_ignored=True,
         )
         # self.views = list(filter(lambda reader: (not reader.ignore), self.views))

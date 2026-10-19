@@ -35,10 +35,10 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
 )
 
-from labtools.GUI.binding import CBinding
-import labtools.plots.plots as plots
-from labtools.utils import threadSafe
-from labtools import config
+from labpilot.GUI.binding import CBinding
+import labpilot.plots.plots as plots
+from labpilot.utils import threadSafe
+from labpilot import config
 
 
 class Widget:

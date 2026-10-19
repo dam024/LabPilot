@@ -1,8 +1,8 @@
 from typing import Any, List, Type
 import json
 import os
-from labtools import logger
-from labtools.GUI.binding import BindingSupport
+from labpilot import logger
+from labpilot.GUI.binding import BindingSupport
 
 
 class Infos:

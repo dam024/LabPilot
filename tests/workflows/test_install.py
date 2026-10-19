@@ -6,8 +6,8 @@ from pathlib import Path
 import subprocess
 import re
 
-import labtools
-from labtools._tools import checks
+import labpilot
+from labpilot._tools import checks
 
 
 class TestInstall(unittest.TestCase):
@@ -58,7 +58,7 @@ class TestInstall(unittest.TestCase):
                 venv / "pip",
                 "-q",
                 "show",
-                "labtools",
+                "labpilot",
             ],
             cwd=self.project_dir,
             capture_output=True,
@@ -70,7 +70,7 @@ class TestInstall(unittest.TestCase):
 
         # Initilize the project
         result = subprocess.run(
-            [venv / "labtools", "init", "-d", "Test installation project"],
+            [venv / "labpilot", "init", "-d", "Test installation project"],
             cwd=self.project_dir,
             capture_output=True,
             text=True,
@@ -103,7 +103,7 @@ class TestInstall(unittest.TestCase):
     def test_version(self):
         # Get the version from pip show
         result = subprocess.run(
-            ["pip", "show", "labtools"],
+            ["pip", "show", "labpilot"],
             cwd=self.project_dir,
             capture_output=True,
             text=True,
@@ -117,4 +117,4 @@ class TestInstall(unittest.TestCase):
         else:
             version_number = None
 
-        self.assertEqual(labtools.get_version(), version_number)
+        self.assertEqual(labpilot.get_version(), version_number)

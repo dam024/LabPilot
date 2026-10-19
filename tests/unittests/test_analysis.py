@@ -3,11 +3,11 @@ import unittest
 from PySide6.QtWidgets import QApplication
 import numpy as np
 
-from labtools.data_management.measurement_information import MeasurementInfos
+from labpilot.data_management.measurement_information import MeasurementInfos
 import tests.dummy_classes as dc
 
-import labtools.analysis as ana
-import labtools.DataReceiver as dr
+import labpilot.analysis as ana
+import labpilot.DataReceiver as dr
 import tests.utils as tu
 
 

@@ -7,15 +7,15 @@ import traceback
 
 from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget, QLabel
 
-from labtools import logger, config, globalState
+from labpilot import logger, config, globalState
 
-from labtools.GUI.binding import CBinding, SavedBinding, Status
-from labtools.GUI.parameters import GUIParametrable, GUIParameter
-import labtools.GUI.objects as objects
+from labpilot.GUI.binding import CBinding, SavedBinding, Status
+from labpilot.GUI.parameters import GUIParametrable, GUIParameter
+import labpilot.GUI.objects as objects
 
-from labtools.analysis import View
-from labtools.data_management.measurement_information import RecordingInfos
-import labtools.measurement_procedure as mp
+from labpilot.analysis import View
+from labpilot.data_management.measurement_information import RecordingInfos
+import labpilot.measurement_procedure as mp
 
 
 class InvalidCall(Exception):

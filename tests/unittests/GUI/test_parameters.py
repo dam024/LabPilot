@@ -4,10 +4,10 @@ from unittest.mock import Mock, patch
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QApplication, QWidget
 
-from labtools.GUI.parameters import (
+from labpilot.GUI.parameters import (
     GUIParametrable,
 )
-from labtools.GUI.binding import (
+from labpilot.GUI.binding import (
     BindingNotInitializedError,
     BindingSupport,
     QtBindingVariable,

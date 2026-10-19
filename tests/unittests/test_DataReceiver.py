@@ -1,5 +1,5 @@
 """
-Comprehensive unit tests for labtools.DataReceiver classes.
+Comprehensive unit tests for labpilot.DataReceiver classes.
 
 Tests cover:
 - ReaderStatus enum and exception classes
@@ -17,8 +17,8 @@ from pathlib import Path
 import numpy as np
 import os
 
-import labtools.DataReceiver as dr
-from labtools.DataReceiver import (
+import labpilot.DataReceiver as dr
+from labpilot.DataReceiver import (
     ReaderStatus,
     NoDataError,
     ReaderImplementationError,
@@ -26,9 +26,9 @@ from labtools.DataReceiver import (
     ProcessedData,
     StreamDataReader,
 )
-from labtools import config
+from labpilot import config
 
-from labtools.GUI.binding import Binding
+from labpilot.GUI.binding import Binding
 import tests.dummy_classes as dc
 import tests.utils as tu
 
@@ -389,7 +389,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         reader = self.MinimalReader()
         reader.dirname = "nonexistent"
         with unittest.mock.patch(
-            "labtools.DataReceiver.config.get", return_value="/tmp"
+            "labpilot.DataReceiver.config.get", return_value="/tmp"
         ):
             self.assertIsNone(reader._load_file())
 

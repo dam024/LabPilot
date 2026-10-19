@@ -8,16 +8,16 @@ import numpy as np
 import os
 from PySide6.QtWidgets import QWidget
 
-from labtools import config, globalState
-from labtools import logger
-import labtools.analysis as ana
-from labtools.GUI.parameters import GUIParameter
-import labtools.GUI.objects as gui_obj
-from labtools.data_management.measurement_information import RecordingInfos
-from labtools.utils import concurrently
+from labpilot import config, globalState
+from labpilot import logger
+import labpilot.analysis as ana
+from labpilot.GUI.parameters import GUIParameter
+import labpilot.GUI.objects as gui_obj
+from labpilot.data_management.measurement_information import RecordingInfos
+from labpilot.utils import concurrently
 
 if TYPE_CHECKING:
-    import labtools.GUI.mainGUI as mainGUI
+    import labpilot.GUI.mainGUI as mainGUI
 
 
 class StopProcedureRequest(Exception):

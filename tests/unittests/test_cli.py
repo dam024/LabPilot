@@ -4,8 +4,8 @@ from pathlib import Path
 import subprocess
 
 # import tests.utils as utils
-import labtools
-from labtools.cli import project_init
+import labpilot
+from labpilot.cli import project_init
 
 
 class TestCLI(unittest.TestCase):
@@ -25,10 +25,10 @@ class TestCLI(unittest.TestCase):
         """Test that the initialization of a project works as expected"""
 
         project_test_desc = "Description of a test project"
-        # Takes into account the normal installation (files in 'labtools_data/') and the editable installation (files in 'src/')
+        # Takes into account the normal installation (files in 'labpilot_data/') and the editable installation (files in 'src/')
         source_destination = (
             "src"
-            if not (Path(labtools.__file__).parent / "labtools_data").exists()
+            if not (Path(labpilot.__file__).parent / "labpilot_data").exists()
             else None
         )
 
@@ -80,10 +80,10 @@ class TestCLI(unittest.TestCase):
         """Test that if I try to initialize the project twice, it will throw an error"""
 
         project_test_desc = "Description of a test project"
-        # Takes into account the normal installation (files in 'labtools_data/') and the editable installation (files in 'src/')
+        # Takes into account the normal installation (files in 'labpilot_data/') and the editable installation (files in 'src/')
         source_destination = (
             "src"
-            if not (Path(labtools.__file__).parent / "labtools_data").exists()
+            if not (Path(labpilot.__file__).parent / "labpilot_data").exists()
             else None
         )
 

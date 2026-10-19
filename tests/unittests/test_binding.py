@@ -1,6 +1,6 @@
 """
 ================================================================================
-LabTools GUI Binding System - Unit Tests
+LabPilot GUI Binding System - Unit Tests
 ================================================================================
 
 This module contains comprehensive unit tests for the binding system classes:
@@ -25,10 +25,10 @@ import os
 
 from PySide6.QtCore import QObject
 from PySide6.QtTest import QSignalSpy
-from labtools.data_management.local_storage import LocalStorage
+from labpilot.data_management.local_storage import LocalStorage
 from tests.utils import UpdatableConfigTest
 
-from labtools.GUI.binding import (
+from labpilot.GUI.binding import (
     BindingAlreadyInitializedError,
     BindingNotInitializedError,
     BindingNotInstantiatedError,

@@ -657,7 +657,7 @@ def main() -> int:
 
     parser.add_argument(
         "module",
-        help="Importable module name, e.g. labtools.GUI.parameters",
+        help="Importable module name, e.g. labpilot.GUI.parameters",
     )
 
     parser.add_argument(

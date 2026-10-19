@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtCore import QObject, QPoint, Qt
 from PySide6.QtTest import QTest, QSignalSpy
 
-from labtools.GUI.binding import BindingSupport, CBinding
-from labtools.GUI.objects import (
+from labpilot.GUI.binding import BindingSupport, CBinding
+from labpilot.GUI.objects import (
     Combobox,
     NumericalValueInput,
     ButtonWidget,

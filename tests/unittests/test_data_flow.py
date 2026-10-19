@@ -1,9 +1,9 @@
 import unittest
 
-from labtools.data_management.measurement_information import RecordingInfos
+from labpilot.data_management.measurement_information import RecordingInfos
 import tests.utils as tu
 
-from labtools.GUI.binding import Binding, BindingNotInstantiatedError, BindingSupport
+from labpilot.GUI.binding import Binding, BindingNotInstantiatedError, BindingSupport
 
 
 class TestRecordingInfos(tu.UpdatableConfigTest):

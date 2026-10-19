@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 import numpy as np
-from labtools import config, globalState, logger
+from labpilot import config, globalState, logger
 import os
 import time
 import threading
@@ -13,12 +13,12 @@ import enum
 import shutil
 import traceback
 from dataclasses import dataclass, fields
-import labtools.GUI.parameters as params
-from labtools.GUI.binding import Binding, CBinding, Status
-import labtools.GUI.objects as gui_obj
+import labpilot.GUI.parameters as params
+from labpilot.GUI.binding import Binding, CBinding, Status
+import labpilot.GUI.objects as gui_obj
 
 if TYPE_CHECKING:
-    from labtools.analysis import View
+    from labpilot.analysis import View
 
 
 class ReaderStatus(enum.StrEnum):

@@ -14,7 +14,7 @@ import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-import labtools.plots.plot_backend as pb
+import labpilot.plots.plot_backend as pb
 
 ### Probably not required anymore:
 # mpl.rcParams["path.simplify"] = True

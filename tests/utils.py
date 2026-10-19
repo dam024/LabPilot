@@ -3,9 +3,9 @@ import shutil
 from typing import Any, Dict, List, Tuple
 from pathlib import Path
 
-from labtools import config
-from labtools.GUI.binding import BindingSupport
-from labtools.data_management.local_storage import LocalStorage
+from labpilot import config
+from labpilot.GUI.binding import BindingSupport
+from labpilot.data_management.local_storage import LocalStorage
 
 
 class UpdatableConfigTest(unittest.TestCase):

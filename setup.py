@@ -17,7 +17,7 @@ class BuildPy(build_py):
         for f in files:
             path = src / f
 
-            d = Path(self.build_lib) / "labtools_data"
+            d = Path(self.build_lib) / "labpilot_data"
             d.mkdir(exist_ok=True)
             dst = d / f
 
@@ -25,7 +25,7 @@ class BuildPy(build_py):
 
 
 setup(
-    name="labtools",
+    name="labpilot",
     version="0.1.1",
     author="Damien Jaccoud",
     author_email="damien.jaccoud@hotmail.com",
@@ -55,7 +55,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "labtools=labtools.cli:main",
+            "labpilot=labpilot.cli:main",
         ],
     },
     cmdclass={"build_py": BuildPy},

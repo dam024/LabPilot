@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING, Dict, Generic, List, Type, TypeVar, override, 
 from PySide6.QtWidgets import QWidget, QGroupBox, QVBoxLayout
 
 
-from labtools.GUI.binding import BindingSupport
-import labtools.GUI.objects as objects
+from labpilot.GUI.binding import BindingSupport
+import labpilot.GUI.objects as objects
 
 if TYPE_CHECKING:
-    from labtools.analysis import View
+    from labpilot.analysis import View
 
-from labtools.utils import AbstractProperties
+from labpilot.utils import AbstractProperties
 
 # ============================================================================
 # GUI Param wrappers

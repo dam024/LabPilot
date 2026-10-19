@@ -1,10 +1,10 @@
-# labtools/analysis.py
+# labpilot/analysis.py
 # =============================================================================
 # Data Analysis and View Management Module
 # =============================================================================
 #
 # This module provides the core infrastructure for data analysis and visualization
-# in the labtools system. It enables a flexible, composable architecture for
+# in the labpilot system. It enables a flexible, composable architecture for
 # managing live data readers, data analysis, and plot generation.
 #
 # Key Concepts:
@@ -58,19 +58,19 @@ from typing import TYPE_CHECKING, Callable, Any, Dict, List, Type
 import numpy as np
 from PySide6.QtWidgets import QWidget
 
-from labtools import logger
-from labtools.GUI.binding import Binding
-from labtools.GUI.objects import NumericalValueInput
-from labtools.data_management.measurement_information import MeasurementInfos
-import labtools.utils as utils
-import labtools.DataReceiver as dr
-import labtools.plots.plots as plots
-from labtools.GUI.parameters import GUIParametrable, GUIParameter
-from labtools import globalState
-import labtools._tools.dynamic_imports as tools
+from labpilot import logger
+from labpilot.GUI.binding import Binding
+from labpilot.GUI.objects import NumericalValueInput
+from labpilot.data_management.measurement_information import MeasurementInfos
+import labpilot.utils as utils
+import labpilot.DataReceiver as dr
+import labpilot.plots.plots as plots
+from labpilot.GUI.parameters import GUIParametrable, GUIParameter
+from labpilot import globalState
+import labpilot._tools.dynamic_imports as tools
 
 if TYPE_CHECKING:
-    import labtools.GUI.mainGUI as mainGUI
+    import labpilot.GUI.mainGUI as mainGUI
 
 
 # =============================================================================

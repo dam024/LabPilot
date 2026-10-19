@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import labtools.utils as utils
+import labpilot.utils as utils
 
 
 class TestResampling(unittest.TestCase):

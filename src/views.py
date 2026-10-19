@@ -2,13 +2,13 @@ from __future__ import annotations
 from typing import Iterable, List
 import time
 
-import labtools.plots.plot_backend as pb
-import labtools.plots.plots_implementation as plots
-import labtools.GUI.objects as gui_obj
-from labtools.GUI.binding import Binding
-from labtools import logger
-import labtools.analysis as ana
-import labtools.measurement_procedure as mp
+import labpilot.plots.plot_backend as pb
+import labpilot.plots.plots_implementation as plots
+import labpilot.GUI.objects as gui_obj
+from labpilot.GUI.binding import Binding
+from labpilot import logger
+import labpilot.analysis as ana
+import labpilot.measurement_procedure as mp
 
 from src.analysis import ExampleAnalysis
 

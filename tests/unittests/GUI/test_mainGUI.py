@@ -3,13 +3,13 @@ from unittest.mock import MagicMock, patch
 
 from PySide6.QtWidgets import QApplication
 
-from labtools.GUI.mainGUI import (
+from labpilot.GUI.mainGUI import (
     GUILogHandler,
     MainWindow,
 )
 from tests.utils import UpdatableConfigTest
 
-from labtools import config
+from labpilot import config
 
 
 class TestGUILogHandler(UpdatableConfigTest):
@@ -95,7 +95,7 @@ class TestMainWindow(UpdatableConfigTest):
 
         plot.update_plot.assert_called_once()
 
-    @patch("labtools.GUI.mainGUI.logger.removeHandler")
+    @patch("labpilot.GUI.mainGUI.logger.removeHandler")
     def test_remove_log_handler(
         self,
         logger_mock,
@@ -108,8 +108,8 @@ class TestMainWindow(UpdatableConfigTest):
 
         logger_mock.assert_called_once()
 
-    @patch("labtools.GUI.mainGUI.QFileDialog.getExistingDirectory")
-    @patch("labtools.GUI.mainGUI.RecordingInfos")
+    @patch("labpilot.GUI.mainGUI.QFileDialog.getExistingDirectory")
+    @patch("labpilot.GUI.mainGUI.RecordingInfos")
     def test_ask_recording_folder(
         self,
         infos_cls,

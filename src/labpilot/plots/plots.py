@@ -7,18 +7,18 @@ from typing import Iterable, Tuple, List, Generic, TypeVar
 import enum
 
 
-import labtools.plots.plot_backend as pb
+import labpilot.plots.plot_backend as pb
 
-from labtools import logger, config
+from labpilot import logger, config
 
 if config.use_gui:
-    from labtools.plots.pyqt_backend import PyQtBackend as UsePlotBackend
+    from labpilot.plots.pyqt_backend import PyQtBackend as UsePlotBackend
 
-    # from labtools.plots.matplotlib_backend import (
+    # from labpilot.plots.matplotlib_backend import (
     #    MatplotlibBackend as UsePlotBackend,
     # )
 else:
-    from labtools.plots.matplotlib_backend import (
+    from labpilot.plots.matplotlib_backend import (
         MatplotlibBackend as UsePlotBackend,
     )
 

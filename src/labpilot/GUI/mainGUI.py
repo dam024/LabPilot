@@ -21,18 +21,18 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
-import labtools.analysis as ana
-import labtools.MainLoopHandler as mainLoop
-import labtools.GUI.internal_parameters as internal_params
-from labtools.GUI.binding import Binding, Status, BindingSupport
+import labpilot.analysis as ana
+import labpilot.MainLoopHandler as mainLoop
+import labpilot.GUI.internal_parameters as internal_params
+from labpilot.GUI.binding import Binding, Status, BindingSupport
 
-from labtools.GUI.objects import GUILogArea, GraphCanvas
+from labpilot.GUI.objects import GUILogArea, GraphCanvas
 
-from labtools import logger, config, globalState
-from labtools.data_management.local_storage import LocalStorage
-from labtools.data_management.measurement_information import RecordingInfos
+from labpilot import logger, config, globalState
+from labpilot.data_management.local_storage import LocalStorage
+from labpilot.data_management.measurement_information import RecordingInfos
 
-import labtools.utils as utils
+import labpilot.utils as utils
 
 
 class GUILogHandler(logging.StreamHandler):
@@ -110,7 +110,7 @@ class MainWindow(QMainWindow, BindingSupport):
 
         self.views_dic = {view.name: view for view in self.views}
 
-        self.setWindowTitle("LabTools: Automatic measurement performance interface")
+        self.setWindowTitle("LabPilot: Automatic measurement performance interface")
         self.resize(1200, 700)
 
         self.reset_plots_parametrables()

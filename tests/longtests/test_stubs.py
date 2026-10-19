@@ -44,7 +44,7 @@ class TestStubs(unittest.TestCase):
 
 
 # Dynamically add a test for each .pyi file
-basepath = Path("src/labtools")
+basepath = Path("src/labpilot")
 files = queue.Queue[Path]()
 for file in os.listdir(basepath):
     files.put_nowait(Path(file))

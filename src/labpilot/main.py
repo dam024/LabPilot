@@ -1,9 +1,9 @@
 from __future__ import annotations
 import argparse
-import labtools._config as config
+import labpilot._config as config
 import unittest
 import os
-from labtools import logger, utils
+from labpilot import logger, utils
 
 
 ### Optimization:
@@ -38,7 +38,7 @@ from labtools import logger, utils
 
 def main():
     # ==== ARGUMENT PARSER  ========
-    desc = os.environ.get("LABTOOLS_PROJECT_DESCRIPTION")
+    desc = os.environ.get("LABPILOT_PROJECT_DESCRIPTION")
     parser = argparse.ArgumentParser(description=desc)
 
     subparsers = parser.add_subparsers(dest="command", help="Specific commands: ")
@@ -191,9 +191,9 @@ def main():
             config.generalConfig.simulation = True
 
     ## Importing project modules
-    from labtools.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
-    from labtools.GUI.mainGUI import MainGUILoop
-    from labtools._tools.checks import checks
+    from labpilot.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
+    from labpilot.GUI.mainGUI import MainGUILoop
+    from labpilot._tools.checks import checks
 
     # Test command
     if args.command == "test":

@@ -1,6 +1,6 @@
 """
 ================================================================================
-LabTools UI Workflow Tests
+LabPilot UI Workflow Tests
 ================================================================================
 
 This module contains tests for the UI workflow functionality. It tests the
@@ -29,8 +29,8 @@ import unittest
 import time
 
 from PySide6.QtWidgets import QApplication
-from labtools.GUI.mainGUI import MainGUILoop, MainWindow
-from labtools import logger, config
+from labpilot.GUI.mainGUI import MainGUILoop, MainWindow
+from labpilot import logger, config
 import tests.utils as tu
 import tests.dummy_classes as dummy
 from tests.utils import use_gui
@@ -432,7 +432,7 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         It ensures integration testing of the actual application logic
         without compromising core functionality through over-mocking.
         """
-        from labtools.analysis import View
+        from labpilot.analysis import View
 
         # Use GUI mode (handled by @use_gui decorator)
         test_view = test_view = list(
@@ -518,7 +518,7 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
 
         This test validates that:
         - When an experiment is running, data is being saved to files
-        - Files are created in the labtools/output directory
+        - Files are created in the labpilot/output directory
         - Files follow the expected naming convention
 
         This is an integration test that verifies file system side effects.

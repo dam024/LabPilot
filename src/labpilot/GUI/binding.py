@@ -1,6 +1,6 @@
 """
 ================================================================================
-LabTools GUI Binding System
+LabPilot GUI Binding System
 ================================================================================
 
 This module implements a reactive GUI binding system that replaces tkinter's
@@ -51,14 +51,14 @@ import functools
 from PySide6.QtCore import QObject, Signal
 
 
-from labtools.data_management.local_storage import LocalStorage
-from labtools.utils import threadSafe
+from labpilot.data_management.local_storage import LocalStorage
+from labpilot.utils import threadSafe
 
-from labtools import logger, config
+from labpilot import logger, config
 
 if TYPE_CHECKING:
-    import labtools.GUI.mainGUI as mainGUI
-    from labtools.data_management.measurement_information import ParametrizedInfos
+    import labpilot.GUI.mainGUI as mainGUI
+    from labpilot.data_management.measurement_information import ParametrizedInfos
 
 T = TypeVar("T")
 

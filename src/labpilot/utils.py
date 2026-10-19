@@ -16,7 +16,7 @@ import functools
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-import labtools._logging as log
+import labpilot._logging as log
 
 
 def resample(arr: np.ndarray, every: int):

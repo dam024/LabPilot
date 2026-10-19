@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 from importlib.resources import files, as_file
 
-from labtools._tools.updates import get_version, update
+from labpilot._tools.updates import get_version, update
 
 # Code to place in the main.py file
 CODE_MAIN_PY = """
@@ -15,16 +15,16 @@ import os
 
 def main():
     \"\"\"Run administrative tasks.\"\"\"
-    os.environ.setdefault("LABTOOLS_PROJECT_DESCRIPTION", "!!DESC!!")
+    os.environ.setdefault("LABPILOT_PROJECT_DESCRIPTION", "!!DESC!!")
     try:
-        import labtools
+        import labpilot
     except ImportError as exc:
         raise ImportError(
-            "Couldn't import LabTools. Are you sure it's installed and "
+            "Couldn't import LabPilot. Are you sure it's installed and "
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    labtools.main()
+    labpilot.main()
 
 
 if __name__ == "__main__":
@@ -55,10 +55,10 @@ def project_init(
 
     if source_files is None:
         # Data folder of the package - where are stored all the pre-written files
-        resource = files("labtools")
+        resource = files("labpilot")
 
         with as_file(resource) as p:
-            data_folder = Path(p).parent / "labtools_data"
+            data_folder = Path(p).parent / "labpilot_data"
     else:
         data_folder = Path(source_files)
 
@@ -95,7 +95,7 @@ def project_init(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="LabTools Administration tools. This command line tool interface allows you to manage your project"
+        description="LabPilot Administration tools. This command line tool interface allows you to manage your project"
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Specific commands: ")
@@ -121,7 +121,7 @@ def main():
 
     # Update parser
     update_parser = subparsers.add_parser(
-        "update", help="Automatically update `LabTools` to its latest version"
+        "update", help="Automatically update `LabPilot` to its latest version"
     )
     update_parser.add_argument(
         "-f", "--force", action="store_true", help="Skip the validation step"
@@ -129,7 +129,7 @@ def main():
 
     # Version parser
     version_parser = subparsers.add_parser(
-        "version", help="Show the current version of LabTools"
+        "version", help="Show the current version of LabPilot"
     )
 
     # Parse the arguments

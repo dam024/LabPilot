@@ -1,7 +1,7 @@
 import numpy as np
 
-from labtools.DataReceiver import StreamDataReader, ProcessedData
-from labtools.GUI.binding import Binding
+from labpilot.DataReceiver import StreamDataReader, ProcessedData
+from labpilot.GUI.binding import Binding
 
 
 class ExampleData(ProcessedData):

@@ -4,11 +4,11 @@ from typing import Callable, Iterable, List, Literal, Tuple
 from PySide6.QtWidgets import QWidget
 import numpy as np
 
-from labtools.analysis import View
-import labtools.plots.plot_backend as pb
-from labtools.plots.plots import GraphSet, GraphSetData, UsePlotBackend
-import labtools.GUI.parameters as params
-import labtools.GUI.objects as gui_obj
+from labpilot.analysis import View
+import labpilot.plots.plot_backend as pb
+from labpilot.plots.plots import GraphSet, GraphSetData, UsePlotBackend
+import labpilot.GUI.parameters as params
+import labpilot.GUI.objects as gui_obj
 
 
 class SimpleData(GraphSetData):

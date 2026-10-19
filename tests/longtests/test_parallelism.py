@@ -2,7 +2,7 @@
 import threading
 import time
 from typing import List
-from labtools.GUI.binding import CBinding
+from labpilot.GUI.binding import CBinding
 import psutil
 import os
 import sys
@@ -10,7 +10,7 @@ import numpy as np
 
 from tests.utils import UpdatableConfigTest
 
-import labtools.DataReceiver as dr
+import labpilot.DataReceiver as dr
 
 
 class TestData(dr.ProcessedData):

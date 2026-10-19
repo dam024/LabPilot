@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Dict, List, Type
 from colorama import Fore, Style, just_fix_windows_console
 
-from labtools.DataReceiver import LiveDataReader
-import labtools._config
-import labtools._tools.dynamic_imports as di
-import labtools.analysis as ana
-import labtools.measurement_procedure as mp
+from labpilot.DataReceiver import LiveDataReader
+import labpilot._config
+import labpilot._tools.dynamic_imports as di
+import labpilot.analysis as ana
+import labpilot.measurement_procedure as mp
 
 just_fix_windows_console()
 
@@ -20,14 +20,14 @@ def checks(config_p: str, verbose: bool):
         print(f"Error: The configuration at `{config_p}` does not exist")
 
     # Load the config
-    config = labtools._config.GeneralConfig()
+    config = labpilot._config.GeneralConfig()
     config.read(config_path)
 
     # Imports all the views
     views: List[ana.View] = di.get_all_views(
         module_location=config.get("GENERAL", "extra_code"),
         cls_type=ana.View,
-        excluded_modules=["labtools.DataReceiver"],
+        excluded_modules=["labpilot.DataReceiver"],
         exclude_ignored=False,
     )
 
