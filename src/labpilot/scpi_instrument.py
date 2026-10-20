@@ -63,7 +63,7 @@ class SCPIInstrument(ABC):
         """
         self.name = name
         self.IP = ip
-        self.port = port
+        self.PORT = port
 
         # Initialize socket (but don't connect yet)
         self.SOCKET: Optional[socket.socket] = None

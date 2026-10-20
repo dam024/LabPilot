@@ -692,7 +692,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         return processed_data
 
 
-class StreamDataReader(LiveDataReader):
+class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
     """
     Subclass of LiveDataReader for streaming data acquisition.
 

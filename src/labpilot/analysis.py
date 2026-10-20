@@ -269,10 +269,12 @@ class DataAnalysis(GUIParametrable):
 
     Example:
         >>> class LaserTransmissionAnalysis(DataAnalysis):
+        ...     graphs: List[plots.GraphSet] = []
         ...     def __init__(self):
         ...         self.plot_ch1 = plots.SimplePlot(...)
         ...         self.plot_ch2 = plots.MaximizationPlot(...)
-        ...         self.graphs = [self.plot_ch1, self.plot_ch2]
+        ...         self.graphs.append(self.plot_ch1)
+        ...         self.graphs.append(self.plot_ch2)
         ...
         ...     @reader
         ...     def laser_reader(self) -> LaserController:
