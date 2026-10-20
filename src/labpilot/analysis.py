@@ -185,7 +185,7 @@ def reader_property(name: str, *args: Any, **kwargs: Any) -> Callable:
     return wrapper
 
 
-def reader(func: Callable) -> Callable:
+def reader[R: dr.LiveDataReader](func: Callable[[Any], R]) -> Callable[[Any], R]:
     """
     Decorator that creates a reader property from a function.
 
