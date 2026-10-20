@@ -12,6 +12,7 @@ from labpilot.GUI.objects import (
     ButtonWidget,
     GUILogArea,
 )
+from labpilot._config import GeneralConfig
 from tests.utils import UpdatableConfigTest
 
 
@@ -188,14 +189,16 @@ class TestQtWidgets(UpdatableConfigTest):
         )
 
     @patch("PySide6.QtWidgets.QMessageBox.critical")
-    # @patch(
-    #    "config.GeneralConfig.show_errors",
-    #    new_callable=PropertyMock,
-    #    return_value=True,
-    # )
+    # We need to mock show_errors, it won't log otherwise...
+    @patch.object(
+        GeneralConfig,
+        "show_errors",
+        new_callable=PropertyMock,
+        return_value=True,
+    )
     def test_error_popup(
         self,
-        # mock_show_errors,
+        mock_show_errors,
         mock_critical,
     ):
         log = GUILogArea(self.parent)

@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 import numpy as np
-from labpilot import config, globalState, logger
+
 import os
 import time
 import threading
@@ -13,6 +13,12 @@ import enum
 import shutil
 import traceback
 from dataclasses import dataclass, fields
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+from labpilot import config, globalState
 import labpilot.GUI.parameters as params
 from labpilot.GUI.binding import Binding, CBinding, Status
 import labpilot.GUI.objects as gui_obj

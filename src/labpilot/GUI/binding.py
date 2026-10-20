@@ -50,11 +50,13 @@ import functools
 
 from PySide6.QtCore import QObject, Signal
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 from labpilot.data_management.local_storage import LocalStorage
 from labpilot.utils import threadSafe
-
-from labpilot import logger, config
+from labpilot import config
 
 if TYPE_CHECKING:
     import labpilot.GUI.mainGUI as mainGUI

@@ -29,8 +29,10 @@ import unittest
 import time
 
 from PySide6.QtWidgets import QApplication
+
+
 from labpilot.GUI.mainGUI import MainGUILoop, MainWindow
-from labpilot import logger, config
+from labpilot import config, utils
 import tests.utils as tu
 import tests.dummy_classes as dummy
 from tests.utils import use_gui
@@ -97,7 +99,7 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         views = [dummy.TestView, dummy.Test2View, dummy.InsertionLoss, dummy.Test3View]
 
         # Create the main GUI loop
-        self.loop = MainGUILoop()
+        self.loop = MainGUILoop(thread_executor=utils.TestThreadExecutor)
         self.loop.run_main_thread = False
         self.loop.start()
 
@@ -120,6 +122,9 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         for view in self.loop.views:
             for analysis in view.analysis:
                 self.assertGreater(len(analysis.readers), 0)
+
+        # Override the MainThreadExecutor
+        self.assertIsInstance(utils._executor, utils.TestThreadExecutor)
 
     def tearDown(self) -> None:
         """

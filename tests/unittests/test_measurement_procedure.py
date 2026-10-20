@@ -17,6 +17,7 @@ import os
 from pathlib import Path
 import shutil
 from PySide6.QtWidgets import QApplication, QWidget
+from labpilot.recording_manager import RecordingManager
 import numpy as np
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
@@ -27,10 +28,10 @@ from labpilot.GUI.objects import ButtonWidget
 import tests.dummy_classes as dc
 import tests.utils as du
 
-from labpilot.data_management.measurement_information import (
-    MeasurementInfos,
-    RecordingInfos,
-)
+# from labpilot.data_management.measurement_information import (
+#    MeasurementInfos,
+#    RecordingInfos,
+# )
 from labpilot.measurement_procedure import (
     MeasurementProcedure,
     StopProcedureRequest,
@@ -127,12 +128,6 @@ class TestDataMeasurementFolderTest(du.UpdatableConfigTest):
         folder = self.procedure.measurement_data_folder
         self.assertTrue(Path(folder).exists())
 
-    def test_measurement_data_folder_includes_custom_dirname(self):
-        """Test that measurement_data_folder uses the custom dirname."""
-        self.procedure.dirname = "custom_dirname"
-        folder = self.procedure.measurement_data_folder
-        self.assertIn("custom_dirname", folder)
-
 
 class TestDataMeasurementFileTest(du.UpdatableConfigTest):
     """Test suite for MeasurementProcedure measurement_data_file property."""
@@ -189,54 +184,6 @@ class TestMeasurementProcedureSave(du.UpdatableConfigTest):
 
         file = Path(self.procedure.measurement_data_file)
         self.assertTrue(file.exists())
-
-    def test_save_creates_info_json_file(self):
-        """Test that save creates an info.json file."""
-        data = np.zeros((2, 5))
-        self.procedure.save(data)
-
-        info_file = Path(self.procedure.measurement_data_folder) / "info.json"
-        self.assertTrue(info_file.exists())
-
-    def test_save_sets_correct_description(self):
-        """Test that save sets the correct description in info.json."""
-        data = np.zeros((2, 5))
-        self.procedure.save(data)
-
-        info_file = Path(self.procedure.measurement_data_folder) / "info.json"
-        with open(info_file, "r") as f:
-            info = json.load(f)
-
-        self.assertEqual(
-            info["description"], f"Measurement procedure: {self.procedure.name}"
-        )
-
-    def test_save_sets_correct_date(self):
-        """Test that save sets the current date in info.json."""
-        import datetime
-
-        data = np.zeros((2, 5))
-        self.procedure.save(data)
-
-        info_file = Path(self.procedure.measurement_data_folder) / "info.json"
-        with open(info_file, "r") as f:
-            info = json.load(f)
-
-        # Need to parse the dates
-        info_parse = datetime.datetime.fromisoformat(info["date"])
-        actual = datetime.datetime.today()
-        self.assertTrue(abs(info_parse - actual) < datetime.timedelta(seconds=1))
-
-    def test_save_sets_is_measurement_flag(self):
-        """Test that save sets is_measurement to True."""
-        data = np.zeros((2, 5))
-        self.procedure.save(data)
-
-        info_file = Path(self.procedure.measurement_data_folder) / "info.json"
-        with open(info_file, "r") as f:
-            info = json.load(f)
-
-        self.assertTrue(info["is_measurement"])
 
     def test_save_preserves_data(self):
         """Test that save preserves the data correctly."""
@@ -769,27 +716,8 @@ class TestMeasurementProcedureStateManagement(du.UpdatableConfigTest):
         MeasurementProcedure.running_threadpool = None
         super().tearDown()
 
-    def test_procedure_running_flag_initially_false(self):
-        """Test that procedure_running is initially False."""
-        self.assertFalse(MeasurementProcedure.procedure_running)
-
-    def test_procedure_running_set_to_true_on_execute(self):
-        """Test that procedure_running is set to True during execution."""
-        from unittest.mock import patch
-
-        with patch.object(self.procedure, "_treat_procedure") as mock_treat:
-            mock_treat.return_value = None
-
-            self.procedure.execute_procedure()
-
-            self.assertTrue(MeasurementProcedure.procedure_running)
-
-    def test_procedure_running_reset_after_execution(self):
-        """Test that procedure_running is reset after execution."""
-        self.procedure.execute_procedure()
-
-        self.assertTrue(MeasurementProcedure.procedure_running)
-
+    def stop_procedure(self):
+        """Stops the current running measurement procedure"""
         # Now that it's running, kills it and wait
         self.procedure.execute_stop_event.set()
 
@@ -798,38 +726,51 @@ class TestMeasurementProcedureStateManagement(du.UpdatableConfigTest):
         if MeasurementProcedure.running_threadpool is not None:
             MeasurementProcedure.running_threadpool.shutdown(wait=True)
 
+    def test_procedure_running_flag_initially_false(self):
+        """Test that procedure_running is initially False."""
         self.assertFalse(MeasurementProcedure.procedure_running)
 
-    def test_running_procedure_set_during_execution(self):
-        """Test that running_procedure is set during execution."""
+    def test_procedure_running_reset_after_execution(self):
+        """Test that procedure_running is reset after execution."""
+        # Set the measurement_id to avoid errors in the test
+        RecordingManager.main().measurement_id = 1
 
-        with patch.object(self.procedure, "_treat_procedure") as mock_treat:
-            mock_treat.return_value = None
+        self.procedure.execute_procedure()
 
-            self.procedure.execute_procedure()
+        self.assertTrue(MeasurementProcedure.procedure_running)
 
-            self.assertIs(MeasurementProcedure.running_procedure, self.procedure)
+        self.stop_procedure()
 
-    def test_running_procedure_reset_after_execution(self):
-        """Test that running_procedure is reset after execution."""
+        self.assertFalse(MeasurementProcedure.procedure_running)
 
-        with patch.object(self.procedure, "_treat_procedure") as mock_treat:
-            mock_treat.return_value = None
+    def test_running_procedure_during_execution(self):
+        """Test that running_procedure is treated correctly"""
+        # Set the measurement_id to avoid errors in the test
+        RecordingManager.main().measurement_id = 1
 
-            self.procedure.execute_procedure()
+        self.procedure.execute_procedure()
 
-            self.assertIs(MeasurementProcedure.running_procedure, self.procedure)
+        self.assertIsNotNone(MeasurementProcedure.running_procedure, self.procedure)
+        self.assertIs(MeasurementProcedure.running_procedure, self.procedure)
 
-    def test_running_threadpool_set_during_execution(self):
-        """Test that running_threadpool is set during execution."""
+        self.stop_procedure()
 
-        with patch.object(self.procedure, "_treat_procedure") as mock_treat:
-            mock_treat.return_value = None
+        self.assertIsNone(MeasurementProcedure.running_procedure, self.procedure)
 
-            self.procedure.execute_procedure()
+    def test_running_threadpool_during_execution(self):
+        """Test that running_threadpool is treated correctly execution."""
+        # Set the measurement_id to avoid errors in the test
+        RecordingManager.main().measurement_id = 1
 
-            # running_threadpool should be None after execution (ThreadPoolExecutor is cleaned up)
-            self.assertIsNone(MeasurementProcedure.running_threadpool)
+        self.procedure.execute_procedure()
+
+        # running_threadpool should NOT be None during execution (ThreadPoolExecutor is cleaned up)
+        self.assertIsNotNone(MeasurementProcedure.running_threadpool)
+
+        self.stop_procedure()
+
+        # running_threadpool should be None after execution (ThreadPoolExecutor is cleaned up)
+        self.assertIsNone(MeasurementProcedure.running_threadpool)
 
 
 class TestMeasurementProcedureSimulationMode(du.UpdatableConfigTest):

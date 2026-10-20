@@ -1,35 +1,58 @@
-from typing import Any, List, Type
+from typing import Any, Dict, List, Type
 import json
 import os
-from labpilot import logger
+
+from sqlalchemy.orm import Session
+import logging
+
+logger = logging.getLogger(__name__)
+
+from labpilot.data_management.type_extension_support import serialize, deserialize
+from labpilot.data_management.database_manager import DB
+from labpilot.data_management.datamodel import Recording
+
 from labpilot.GUI.binding import BindingSupport
 
 
+class ForbidenKeyError(Exception):
+    pass
+
+
 class Infos:
+    __authorized_keys__: List[str] | None = None
+
     def __init__(self) -> None:
         self._values = {}
 
     def load(self, path: str):
-        try:
-            with open(os.path.join(path, "info.json"), "r") as f:
-                self._values = json.load(f)
-        except Exception as e:
-            logger.error(f"Error when opening file {path}")
-            logger.exception(e)
+        # try:
+        with open(os.path.join(path, "info.json"), "r") as f:
+            self._values = json.load(f, object_hook=deserialize)
+        # except Exception as e:
+        # logger.error(f"Error when opening file {path}")
+        # logger.exception(e)
+
+    def to_dict(self) -> dict:
+        return self._values
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), default=serialize)
 
     def save(self, path_folder: str):
         """Saves all the informations in the given directory"""
-        try:
-            with open(os.path.join(path_folder, "info.json"), "w") as f:
-                json.dump(self._values, f)
-        except Exception as e:
-            logger.error(f"Error when saving experiment informations: {path_folder}")
-            logger.exception(e)
+        path = os.path.join(path_folder, "info.json")
+
+        with open(path, "w") as f:
+            json.dump(self.to_dict(), f, default=serialize)
 
     def __getitem__(self, index: str) -> Any:
         return self._values[index]
 
     def __setitem__(self, index: str, value: Any):
+        if self.__authorized_keys__ and index not in self.__authorized_keys__:
+            raise ForbidenKeyError(
+                f"You are not authorized to set the key `{index}` in object of class `{self.__class__.__name__}`. Authorized keys are: {self.__authorized_keys__}"
+            )
         self._values[index] = value
 
 
@@ -80,67 +103,52 @@ class ParametrizedInfos(Infos):
             self.apply_parameters()
 
 
-# The final system must make sure that all data are given to before saving!
-class MeasurementInfos(Infos):
-    def __init__(self):
-        super().__init__()
+class RecordingInfos(ParametrizedInfos):
+    """This class is a data, session-independant representation of Recording
 
-
-class Experiment:
-    # Description
-    description: str
-    # Name
-    name: str
-    # Folder name
-    folder_name: str
-
-    """This class represents an experiment. It contains informations about the different sets of measurements. The goal of this entity is to indicate what is the goal of the given set of measurements
+    You can use this object outside of the database, with the only downside that the measurement won't be accessible directly...
     """
 
+    __authorized_keys__ = [
+        "id",
+        "description",
+        "readers",
+        "start",
+        "end",
+        "measurement_id",
+        "parameters",
+    ]
 
-class Sample:
-    """Represents a single sample"""
+    def as_recording(self, session: Session) -> Recording | None:
+        """Convert the current object into a `Recording`. If an instance alread exists in the database, this instance will be queried and updated. The mapping is performed if the 'id' property is set"""
+        assert self.__authorized_keys__ is not None
 
-    name: str
-    comment: str
+        if "id" in self._values:
+            recording = session.query(Recording, self["id"])
+        else:
+            recording = Recording()
 
+        # Set the keys accordingly
+        for key in self.__authorized_keys__:
+            if key in self._values:
+                setattr(recording, key, self[key])
 
-class SetupVersion:
-    """Version of the setup"""
+        return recording
 
-    # Name of version
-    version: str
-    # Setup mode
-    mode: str
-    # Description
-    description: str
+    def __eq__(self, value: object, /) -> bool:
+        if not isinstance(value, RecordingInfos):
+            return False
 
+        return self._values == value._values
 
-class Measurement(ParametrizedInfos):
-    """A Measurement is a set of recordings on a given sample. These recordings were made on the same shot."""
+        assert self.__authorized_keys__ is not None
 
-    # authors
-    authors: List[str]
-    # Date
-    date_start: str
-    date_end: str
-    # Setup version
-    setupVersion: SetupVersion
-    # Experiment
-    experiment: Experiment
-    # Sample
-    sample: Sample
+        for key in self.__authorized_keys__:
+            if (
+                key not in self._values
+                or key not in value._values
+                or self[key] != value[key]
+            ):
+                return False
 
-
-class RecordingInfos(ParametrizedInfos):
-    # Recording Procedure. This is the name of the class
-    name: str  # -> unique value!!!!
-    # Description of the recording
-    description: str
-    # List of readers that were recording data
-    readers: List[str]
-    # Time
-    time_start: str
-    time_end: str
-
-    measurement: Measurement
+        return True

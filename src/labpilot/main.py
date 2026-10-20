@@ -1,9 +1,12 @@
 from __future__ import annotations
 import argparse
-import labpilot._config as config
 import unittest
 import os
-from labpilot import logger, utils
+import logging
+
+from labpilot._logging import ConsoleLogger, setup_logging
+from labpilot import utils
+import labpilot._config as config
 
 
 ### Optimization:
@@ -190,6 +193,14 @@ def main():
         if args.disk_data:
             config.generalConfig.simulation = True
 
+    # Setup up logging
+    logger = setup_logging(level=logging.DEBUG)
+
+    import labpilot
+
+    # To make sure we are using the main logger!
+    assert logger.name == labpilot.__name__
+
     ## Importing project modules
     from labpilot.MainLoopHandler import PlotGeneration, PlotsGUIMainLoop
     from labpilot.GUI.mainGUI import MainGUILoop
@@ -203,11 +214,13 @@ def main():
 
         # Remove all the handlers to avoid printing in the console...
         logger.clear_handlers()
+        logging.disable(logging.CRITICAL)
         # Run unit tests
         run_tests_in_directory(os.path.join(os.getcwd(), "tests"), args.test_module)
     # Other commands
     elif args.command == "check":
         # Run the checks
+        logger.setLevel(logging.INFO)
         checks(args.config, args.verbose)
     else:
         config.generalConfig.read(args.config)

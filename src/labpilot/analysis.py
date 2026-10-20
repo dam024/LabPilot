@@ -55,13 +55,17 @@ from abc import abstractmethod
 import functools
 from types import ModuleType
 from typing import TYPE_CHECKING, Callable, Any, Dict, List, Type
+from labpilot.data_management.datamodel import Recording
 import numpy as np
 from PySide6.QtWidgets import QWidget
 
-from labpilot import logger
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 from labpilot.GUI.binding import Binding
 from labpilot.GUI.objects import NumericalValueInput
-from labpilot.data_management.measurement_information import MeasurementInfos
 import labpilot.utils as utils
 import labpilot.DataReceiver as dr
 import labpilot.plots.plots as plots
@@ -520,7 +524,7 @@ class DataAnalysis(GUIParametrable):
         # and then call the `update_data()` method from the corresponding `GraphSet` object
         pass
 
-    def plot_generation(self, infos: MeasurementInfos) -> List[plots.GraphSet]:
+    def plot_generation(self, infos: Recording) -> List[plots.GraphSet]:
         """
         Allows for the generation of extra plots during the post processing.
 
@@ -530,6 +534,7 @@ class DataAnalysis(GUIParametrable):
         Returns:
             List[plots.GraphSet]: Empty list by default. Override to return custom plots.
         """
+        ## ToDo: Give the correct type to the infos parameter and adapt to the use case...
         return []
 
 

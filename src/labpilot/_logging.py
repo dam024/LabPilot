@@ -24,19 +24,19 @@ def get_caller_infos(caller_extra: int) -> str:
     return additional
 
 
-def warning(message: str, add_caller_infos: bool = True, caller_extra: int = 1):
-    """
-    Print a warning message with colored text.
-
-    Parameters:
-        message (str): The warning message to display.
-        add_caller_infos (bool, optional): Indicates if we need to include informations about where the warning comes from
-        caller_extra (int, optional): Indicates how many parent calls starting from the line calling this function we must use. Note that a caller_extra of 0 will refer to the line of the warning!
-    """
-    additional = ""
-    if add_caller_infos:
-        additional = f" {get_caller_infos(caller_extra=caller_extra+1)}"
-    print(f"{Fore.YELLOW}Warning: {message}{additional}{Style.RESET_ALL}")
+# def warning(message: str, add_caller_infos: bool = True, #caller_extra: int = 1):
+#    """
+#    Print a warning message with colored text.
+#
+#    Parameters:
+#        message (str): The warning message to display.
+#        add_caller_infos (bool, optional): Indicates if we #need to include informations about where the warning #comes from
+#        caller_extra (int, optional): Indicates how many #parent calls starting from the line calling this #function we must use. Note that a caller_extra of 0 #will refer to the line of the warning!
+#    """
+#    additional = ""
+#    if add_caller_infos:
+#        additional = f" {get_caller_infos(caller_extra=#caller_extra+1)}"
+#    print(f"{Fore.YELLOW}Warning: {message}{additional}{Style.RESET_ALL}")
 
 
 just_fix_windows_console()  # Initialize colorama for Windows compatibility
@@ -123,7 +123,17 @@ class ConsoleLogger(logging.Logger):
         """
         self.config: config.GeneralConfig | None = None
         super().__init__(name, level)
-        self._setup_console_handler()
+
+    @classmethod
+    def get_app_logger_name(cls) -> str:
+        return "labpilot"
+
+    @classmethod
+    def get_app_logger(cls) -> ConsoleLogger:
+        l = logging.getLogger(cls.get_app_logger_name())
+
+        assert isinstance(l, ConsoleLogger), f"App Logger is of type {type(l)}"
+        return l
 
     def _setup_console_handler(self) -> None:
         """
@@ -134,7 +144,6 @@ class ConsoleLogger(logging.Logger):
 
         # Create console handler
         self.console_handler = logging.StreamHandler(sys.stdout)
-        self.console_handler.setLevel(self.level)
 
         # Set up formatter with color support
         formatter = ColoredFormatter(
@@ -150,10 +159,18 @@ class ConsoleLogger(logging.Logger):
         return super().makeRecord(*args, **kwargs)
 
     def config_logger(self, config: config.GeneralConfig):
+        """Configures the app logger to use the log level setup in config.ini"""
         self.config = config
         log_level = self.config.log_level
 
-        self.setLevel(log_level)
+        app_logger = self.get_app_logger()
+
+        if log_level not in logging.getLevelNamesMapping():
+            raise ValueError(
+                f"Invalid log level set in your config file: \n>>>\t[GENERAL]\n>>>\tlog_level={log_level} # This value is wrong\n Possible values are: {logging.getLevelNamesMapping().keys()}"
+            )
+
+        app_logger.setLevel(log_level)
 
     def newline(self):
         print(f"\n")
@@ -205,19 +222,26 @@ def setup_logging(
         color: Enable color output (default: True)
 
     Returns:
-        Configured ConsoleLogger instance
+        The main App Logger
 
     Example:
         logger = setup_logging(level='DEBUG')
         logger.info('Application started')
     """
-    root = logging.getLogger()
-    root.setLevel(level)
-    logger: ConsoleLogger = ConsoleLogger(name=name, level=level)
-    return logger
+    # root = logging.getLogger()
+    # root.setLevel(level)
 
+    # Configure the app logger
+    app_logger = ConsoleLogger.get_app_logger()
 
-logger = setup_logging(level=logging.INFO)
+    # Create
+    app_logger._setup_console_handler()
+    # Don't propagate to the root level!
+    app_logger.propagate = False
+    app_logger.setLevel(level)
+
+    return app_logger
+
 
 # Example usage and demonstration
 if __name__ == "__main__" and False:

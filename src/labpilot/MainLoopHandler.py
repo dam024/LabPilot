@@ -8,12 +8,14 @@ import numpy as np
 import threading
 import os
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from labpilot.data_management.local_storage import LocalStorage
-from labpilot.data_management.measurement_information import MeasurementInfos
 import labpilot.DataReceiver as dr
 import labpilot.analysis as ana
 import labpilot.measurement_procedure as mp
-from labpilot import logger
 from labpilot import config, globalState
 import labpilot._tools.dynamic_imports as tools
 

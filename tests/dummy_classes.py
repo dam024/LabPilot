@@ -5,19 +5,24 @@ from typing import Any, Callable, Iterable, List, Type, overload
 import random
 import PySide6.QtWidgets as qt
 
+
+import labpilot
+import logging
+
+logger = logging.getLogger(labpilot.__name__ + "." + __name__)
+
 from labpilot.DataReceiver import (
     LiveDataReader,
     ProcessedData,
     StreamDataReader,
 )
+
 import labpilot.plots.plot_backend as pb
 import labpilot.plots.plots_implementation as plots
 import labpilot.GUI.objects as gui_obj
 from labpilot.GUI.binding import Binding, CBinding
-from labpilot import logger
 import labpilot.analysis as ana
 import labpilot.measurement_procedure as mp
-
 import numpy as np
 
 

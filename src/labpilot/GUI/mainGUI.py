@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Type
 
 # import matplotlib.pyplot as plt
 
@@ -21,16 +21,21 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+from labpilot._logging import ConsoleLogger
 import labpilot.analysis as ana
 import labpilot.MainLoopHandler as mainLoop
 import labpilot.GUI.internal_parameters as internal_params
 from labpilot.GUI.binding import Binding, Status, BindingSupport
+from labpilot.data_management.measurement_information import RecordingInfos
 
 from labpilot.GUI.objects import GUILogArea, GraphCanvas
 
-from labpilot import logger, config, globalState
+from labpilot import config, globalState
 from labpilot.data_management.local_storage import LocalStorage
-from labpilot.data_management.measurement_information import RecordingInfos
 
 import labpilot.utils as utils
 
@@ -60,6 +65,12 @@ class MainGUILoop(mainLoop.MainLoop):
     auto_start_threads = False
     run_main_thread = True
 
+    def __init__(
+        self, thread_executor: Type[utils.ThreadExecutor] = utils.MainThreadExecutor
+    ):
+        self._thread_executor = thread_executor
+        super().__init__()
+
     def main_thread_loop(self):
         logger.info("Starting main GUI")
 
@@ -70,7 +81,9 @@ class MainGUILoop(mainLoop.MainLoop):
         self.window = MainWindow(self.views, self)
 
         # utils._root = window
-        utils._executor = utils.MainThreadExecutor(self.window)
+        utils._executor = self._thread_executor(
+            self.window
+        )  # utils.MainThreadExecutor(self.window)
 
         self.window.show()
 
@@ -250,17 +263,20 @@ class MainWindow(QMainWindow, BindingSupport):
 
     def add_log_handler(self):
         """Adds a log handler to be able to show the logs on the small message box"""
+        # Get the app logger
+        app_logger = ConsoleLogger.get_app_logger()
         self.handler = GUILogHandler()
         self.handler.logArea = self.logArea
         formatter = logging.Formatter("%(levelname)s: %(message)s")
 
         self.handler.setFormatter(formatter)
-        self.handler.setLevel(logger.get_level())
+        self.handler.setLevel(app_logger.get_level())
 
-        logger.addHandler(self.handler)
+        if self.handler not in app_logger.handlers:
+            app_logger.addHandler(self.handler)
 
     def remove_log_handler(self):
-        logger.removeHandler(self.handler)
+        ConsoleLogger.get_app_logger().removeHandler(self.handler)
 
     # --------------------------------------------------
     # Sidebar

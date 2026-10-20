@@ -8,12 +8,16 @@ import numpy as np
 import os
 from PySide6.QtWidgets import QWidget
 
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 from labpilot import config, globalState
-from labpilot import logger
 import labpilot.analysis as ana
 from labpilot.GUI.parameters import GUIParameter
 import labpilot.GUI.objects as gui_obj
-from labpilot.data_management.measurement_information import RecordingInfos
+from labpilot.recording_manager import RecordingManager
 from labpilot.utils import concurrently
 
 if TYPE_CHECKING:
@@ -51,7 +55,8 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
                 config.output_dir_data, globalState.reading_recording_subfolder
             )
         else:
-            folder = os.path.join(config.output_dir_data, self.dirname)
+            # folder = os.path.join(config.output_dir_data, self.dirname)
+            folder = RecordingManager.main().recording_path
         os.makedirs(folder, exist_ok=True)
 
         return folder
@@ -101,6 +106,8 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         if self.window is not None and not self.window.is_experiment_running.get():
             self.window.start_updates()
 
+        # Update all the recording informations
+        RecordingManager.main().start_recording(self)
         MeasurementProcedure.procedure_running = True
         MeasurementProcedure.running_procedure = self
         self.execute_stop_event.clear()
@@ -115,15 +122,30 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     @concurrently
     def _treat_procedure(self, **kwargs):
         """Code that actually executes the procedure"""
-
+        save_data = False
         try:
             data = self.execute()
-
             # Save the data
             if not self.execute_stop_event.is_set():
                 self.save(data)
+                save_data = True
         except StopProcedureRequest:
             pass
+        except Exception as e:
+            logger.error(e)
+            traceback.print_exception(e)
+
+        # Stop the recording
+        description = f"Measurement procedure: {self.name}"
+
+        try:
+            RecordingManager.main().end_recording(
+                self,
+                save_data=save_data,
+                mainWindow=self.window,
+                foldername=self.dirname,
+                description=description,
+            )
         except Exception as e:
             logger.error(e)
             traceback.print_exception(e)
@@ -142,17 +164,6 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         """Saves the data collected during the procedure"""
         path = self.measurement_data_file
         np.save(path, data)
-
-        ### NOTE: same code as for the recording... It must be adapted
-        infos = RecordingInfos()
-
-        infos["description"] = f"Measurement procedure: {self.name}"
-        infos["date"] = str(datetime.datetime.today())
-        infos["is_measurement"] = True
-
-        infos.dump_parameters()
-
-        infos.save(self.measurement_data_folder)
 
     def log_data(self, data: np.ndarray, progress: int | None = None):
         """Call this method when new data are collected during the procedure. You can pass the entire data set. They will then be available when the plots will be refreshed

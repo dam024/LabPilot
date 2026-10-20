@@ -67,6 +67,7 @@ setup(
         "scipy>=1.18.0",
         "tqdm>=4.70.0",
         "typing_extensions>=4.16.0",
+        "sqlalchemy>=2.1.0",
     ],
     python_requires=">=3.13",
     extras_require={

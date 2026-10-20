@@ -1,11 +1,22 @@
+import os
 import unittest
 import shutil
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 from pathlib import Path
+
+import labpilot
+import logging
+
+from labpilot.data_management.database_manager import DB
+
+logger = logging.getLogger(labpilot.__name__ + "." + __name__)
+
+import labpilot.utils as utils
 
 from labpilot import config
 from labpilot.GUI.binding import BindingSupport
 from labpilot.data_management.local_storage import LocalStorage
+from labpilot.recording_manager import RecordingManager
 
 
 class UpdatableConfigTest(unittest.TestCase):
@@ -23,6 +34,26 @@ class UpdatableConfigTest(unittest.TestCase):
         Returns:
             None
         """
+        # Register the cleanups. They are executed AFTER the tearDown(). These methods will ensure proper reset of global states of the application
+        self.addCleanup(self._reset_config)
+        self.addCleanup(self._reset_bindings)
+        self.addCleanup(self._reset_recording_manager)
+
+        # Create local storage path
+        path = Path(config.get("GENERAL", "local_storage_path"))
+        path.mkdir(parents=True, exist_ok=True)
+
+        # Copy the test DB there
+        shutil.copyfile(os.path.join("tests", "test_db.db"), path / "database.db")
+
+        self.assertTrue(Path("tests/.local_storage/database.db").exists())
+
+        # print(self.__class__.__name__)
+        self.assertEqual(
+            len(logger.handlers),
+            0,
+            f"All log handlers must be deleted for this!!! {logger.handlers}",
+        )
         self.config: List[Tuple[str, str, str]] = []
         self.assertFalse(config.simulation)
         self.assertFalse(config.use_gui)
@@ -43,6 +74,16 @@ class UpdatableConfigTest(unittest.TestCase):
         self.config.append((section, option, val))
         config.set(section, option, value)
 
+    def _reset_config(self):
+        """Resets the configuration that may have been modified for the test purposes"""
+        # Reset the config
+        for section, option, value in self.config:
+            config.set(section, option, value)
+
+    def _reset_recording_manager(self):
+        """Reset the Recording Manager state"""
+        RecordingManager._main = None
+
     def tearDown(self) -> None:
         """Clean up configuration and resources after each test method.
 
@@ -52,19 +93,17 @@ class UpdatableConfigTest(unittest.TestCase):
         Returns:
             None
         """
-        self.assertFalse(config.simulation)
-        self.assertFalse(config.use_gui)
+        # Execute code that was supposed to be executed on the main thread
+        # self.assertFalse(self.has_thread_jobs())
+        self.main_thread_execute()
 
-        # Reset the config
-        for section, option, value in self.config:
-            config.set(section, option, value)
-
-        # Reset the bindings
-        self._reset_bindings()
-
+        # Clean the output directory
         data_path = Path(config.output_dir)
         if data_path.exists():
             shutil.rmtree(data_path)
+
+        # Close the connection with the database
+        DB.engine.dispose()
 
         # Delete local storage
         path = config.get("GENERAL", "local_storage_path")
@@ -74,6 +113,10 @@ class UpdatableConfigTest(unittest.TestCase):
             db.__del__()
             del db
             shutil.rmtree(Path(path))
+
+        # Assertion
+        self.assertFalse(config.simulation)
+        self.assertFalse(config.use_gui)
 
         return super().tearDown()
 
@@ -101,6 +144,21 @@ class UpdatableConfigTest(unittest.TestCase):
             self.assertIsNone(bindingInstance.__class__.__main_instance__)
 
         BindingSupport.parametrables.clear()
+
+    ## Mark: Thread management functions specific for tests
+    def main_thread_execute(self):
+        """Executes all the methods that were called from the main thread to be executed on the main thread"""
+        assert isinstance(
+            utils._executor, utils.TestThreadExecutor
+        ), f"Obtained class: {utils._executor}"
+
+        utils._executor.main_thread_execute()
+
+    def has_thread_jobs(self) -> bool:
+        """Returns a boolean indicating if one or multiple methods need to be executed on the main thread"""
+        assert isinstance(utils._executor, utils.TestThreadExecutor)
+
+        return utils._executor.has_main_thread_func()
 
 
 def simulation(func):

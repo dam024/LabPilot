@@ -6,10 +6,13 @@ import numpy as np
 from typing import Iterable, Tuple, List, Generic, TypeVar
 import enum
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 import labpilot.plots.plot_backend as pb
 
-from labpilot import logger, config
+from labpilot import config
 
 if config.use_gui:
     from labpilot.plots.pyqt_backend import PyQtBackend as UsePlotBackend
