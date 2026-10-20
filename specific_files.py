@@ -4,9 +4,9 @@ import random
 import PySide6.QtWidgets as qt
 
 
-import logging
+import labpilot
 
-logger = logging.getLogger(__name__)
+logger = labpilot.getLogger(__name__)
 
 from labpilot.DataReceiver import (
     LiveDataReader,
@@ -17,7 +17,6 @@ import labpilot.plots.plot_backend as pb
 import labpilot.plots.plots_implementation as plots
 import labpilot.GUI.objects as gui_obj
 from labpilot.GUI.binding import Binding, CBinding
-from labpilot import logger
 import labpilot.analysis as ana
 import labpilot.measurement_procedure as mp
 

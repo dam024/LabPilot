@@ -14,6 +14,7 @@ import unittest
 import unittest.mock
 import time
 from pathlib import Path
+from labpilot.recording_manager import RecordingManager
 import numpy as np
 import os
 
@@ -129,7 +130,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
             super().__init__(refresh_delay)
 
         def pull_data(self) -> np.ndarray:
-            return np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+            return np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
 
         def process_data(self, raw_data: np.ndarray) -> dc.TestData:
             data = dc.TestData()
@@ -407,6 +408,27 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
             self.assertEqual(result.shape, (1, 2))  # Shape matches saved file
 
         temp_file.unlink()
+
+    def test_recording(self):
+        """Test that the Reader is saving adding the recording files to the queue when recording is ON"""
+        reader = self.MinimalReader()
+
+        recording_manager = RecordingManager.main()
+
+        recording_manager.start_recording(self)
+
+        reader._data_collection_step()
+
+        recording_manager.end_recording(self, save_data=False)
+
+        # Check that the file is in the queue
+        self.assertFalse(reader.save_queue.empty(), "Nothing was added to the queue...")
+
+        data, path, force_save = reader.save_queue.get_nowait()
+
+        np.testing.assert_array_equal(data, reader.pull_data())
+        self.assertEqual(os.path.basename(path), "output_0.npy")
+        self.assertTrue(force_save)
 
 
 class TestLiveReaderLifecycle(tu.UpdatableConfigTest):

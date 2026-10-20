@@ -18,6 +18,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import labpilot.recording_manager as rm
 from labpilot import config, globalState
 import labpilot.GUI.parameters as params
 from labpilot.GUI.binding import Binding, CBinding, Status
@@ -316,7 +317,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
                 return
 
             # Save all data
-            if globalState.recording:
+            if rm.RecordingManager.main().is_recording:
                 # self.save_all_arrays = True
                 self.save_data(
                     data,
@@ -334,7 +335,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
 
             # Save the new raw data
             # ts0 = time.perf_counter()
-            if not globalState.recording:
+            if not rm.RecordingManager.main().is_recording:
                 self.save_data(data_aggregated)
             # ts1 = time.perf_counter()
             # logger.debug(f"Elapsed time for saving: {ts1-ts0}")
