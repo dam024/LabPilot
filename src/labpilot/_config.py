@@ -63,15 +63,6 @@ class GlobalState:
     stream_values: bool = True
 
     @property
-    def recording(self) -> bool:
-        """Indicates if the application is being recording"""
-        return self._recording
-
-    @recording.setter
-    def recording(self, value: bool):
-        self._recording = value
-
-    @property
     def recording_subfolder(self) -> str:
         """Folder where to save the collected data"""
         return self._recording_subfolder
