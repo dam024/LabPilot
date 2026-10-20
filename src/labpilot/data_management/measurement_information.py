@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Type
 import json
 import os
 
+from sqlalchemy.orm import Session
 import logging
 
 logger = logging.getLogger(__name__)
@@ -118,7 +119,7 @@ class RecordingInfos(ParametrizedInfos):
         "parameters",
     ]
 
-    def as_recording(self, session) -> Recording | None:
+    def as_recording(self, session: Session) -> Recording | None:
         """Convert the current object into a `Recording`. If an instance alread exists in the database, this instance will be queried and updated. The mapping is performed if the 'id' property is set"""
         assert self.__authorized_keys__ is not None
 

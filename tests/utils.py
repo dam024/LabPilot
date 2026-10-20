@@ -43,6 +43,11 @@ class UpdatableConfigTest(unittest.TestCase):
         path = Path(config.get("GENERAL", "local_storage_path"))
         path.mkdir(parents=True, exist_ok=True)
 
+        # Copy the test DB there
+        shutil.copyfile(os.path.join("tests", "test_db.db"), path / "database.db")
+
+        self.assertTrue(Path("tests/.local_storage/database.db").exists())
+
         # print(self.__class__.__name__)
         self.assertEqual(
             len(logger.handlers),
@@ -96,6 +101,9 @@ class UpdatableConfigTest(unittest.TestCase):
         data_path = Path(config.output_dir)
         if data_path.exists():
             shutil.rmtree(data_path)
+
+        # Close the connection with the database
+        DB.engine.dispose()
 
         # Delete local storage
         path = config.get("GENERAL", "local_storage_path")
