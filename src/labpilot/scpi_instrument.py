@@ -24,6 +24,8 @@ import socket
 import time
 from typing import TYPE_CHECKING, Any, Optional
 
+import pyvisa
+
 from labpilot import logger, config
 
 
@@ -48,25 +50,21 @@ class SCPIInstrument(ABC):
     """
 
     IP: str
-    PORT: int
-    SOCKET: Optional[socket.socket] = None
     TIMEOUT: int = 30000  # Default timeout: 30 seconds
 
-    def __init__(self, name: str, ip: str, port: int) -> None:
+    def __init__(self, name: str, ip: str) -> None:
         """
         Initialize the SCPI instrument.
 
         Args:
             name: Friendly Name of the instrument. This is a name for refering to it during execution of the program
             ip: The IP address of the instrument.
-            port: The TCP port of the instrument.
         """
         self.name = name
         self.IP = ip
-        self.PORT = port
 
-        # Initialize socket (but don't connect yet)
-        self.SOCKET: Optional[socket.socket] = None
+        # Initialize Resource Manager
+        self.rm = pyvisa.ResourceManager()
 
     @property
     def is_connected(self) -> bool:
@@ -76,7 +74,7 @@ class SCPIInstrument(ABC):
         Returns:
             bool: True if connected, False otherwise.
         """
-        return self.SOCKET is not None and self.SOCKET.getpeername() is not None
+        return self.sds is not None
 
     def connect(self) -> bool:
         """
@@ -88,16 +86,14 @@ class SCPIInstrument(ABC):
             bool: True if connection was successful.
         """
         try:
-            self.SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.SOCKET.settimeout(self.TIMEOUT / 1000.0)  # Convert ms to seconds
-            self.SOCKET.connect((self.IP, self.PORT))
-            logger.debug(f"Connected to instrument at {self.IP}:{self.PORT}")
+            self.sds = self.rm.open_resource(f"TCPIP::{self.IP}::INSTR")
+            self.sds.timeout = 5000  # 5s
+            self.sds.chunk_size = 20 * 1024 * 1024
+            logger.debug(f"Connected to instrument at {self.IP}")
             return True
         except Exception as e:
-            logger.error(
-                f"Failed to connect to instrument at {self.IP}:{self.PORT}: {e}"
-            )
-            self.SOCKET = None
+            logger.error(f"Failed to connect to instrument at {self.IP}: {e}")
+            self.sds = None
             return False
 
     def disconnect(self) -> None:
@@ -106,10 +102,10 @@ class SCPIInstrument(ABC):
 
         Closes the socket if it exists.
         """
-        if self.SOCKET is not None:
+        if self.sds:
             try:
-                self.SOCKET.close()
-                self.SOCKET = None
+                self.sds.close()
+                self.sds = None
                 logger.info(f"{self.name} disconnected")
             except Exception as e:
                 logger.warning(f"Error closing socket: {e}")
@@ -132,25 +128,22 @@ class SCPIInstrument(ABC):
             socket.timeout: If the command or response times out.
             ConnectionError: If the connection is lost during communication.
         """
-        if self.SOCKET is None or not self.is_connected:
+        if self.sds is None or not self.is_connected:
             return ""
 
         try:
             # Send the command with newline termination (SCPI protocol)
-            self.SOCKET.sendall((command + "\n").encode())
+            self.sds.write(command)
 
             # Check if this is a query or a command expecting a response
             needs_response = "?" in command or command.endswith("DAT2")
 
             if needs_response:
                 # Read the response
-                raw_bytes = self.SOCKET.recv(4096)
-                # Remove any trailing 'V' characters (some instruments add them)
-                response = raw_bytes.rstrip(b"V")
-                # Decode to string and strip whitespace
-                response_str = response.decode("utf-8").strip()
-                logger.debug(f"SCPI command: {command}. Response: {response_str}")
-                return response_str
+                raw_bytes = self.sds.read_raw().strip()
+
+                logger.debug(f"SCPI command: {command}. Response: {raw_bytes.decode()}")
+                return raw_bytes.decode()
             else:
                 # Command with no response
                 logger.debug(f"SCPI command: {command}. No response expected.")
