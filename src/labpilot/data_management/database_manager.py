@@ -2,8 +2,6 @@ from types import TracebackType
 from typing import Any, Callable, Generic, Type, TypeVar, Dict
 import os
 import json
-from sqlalchemy import Engine, create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 import logging
 
@@ -12,7 +10,8 @@ from labpilot import config
 from labpilot.GUI.binding import BindingSupport
 
 
-class Base(DeclarativeBase):
+# class Base(DeclarativeBase):
+class Base:
     pass
 
 
@@ -51,7 +50,7 @@ class classlazyproperty(Generic[T, C]):
 
 class DB:
     @classlazyproperty
-    def engine(cls) -> Engine:
+    def engine(cls) -> "Engine":
         """Engine used for the connexion to the database"""
         logger.info(f"Database: {config.database_url}")
         eng = create_engine(config.database_url, echo=False)

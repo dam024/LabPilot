@@ -1,10 +1,10 @@
 from __future__ import annotations
+import datetime
 import os
 import traceback
 from typing import TYPE_CHECKING, List
 
 from PySide6.QtWidgets import QInputDialog
-from sqlalchemy.engine.default import datetime
 
 import logging
 
@@ -162,9 +162,9 @@ class RecordingManager:
         recording["measurement_id"] = self.measurement_id
 
         # Save the recording informations
-        with DB() as session:
-            rec = recording.as_recording(session)
-            session.add(rec)
+        # with DB() as session:
+        #    rec = recording.as_recording(session)
+        #    session.add(rec)
 
         # Save the data in the json file
         try:
