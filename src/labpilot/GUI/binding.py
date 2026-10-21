@@ -374,22 +374,25 @@ class Binding(Generic[T]):
         Code executed when the value of the `Binding` is changed.
 
         Note:
-            This method is called only once per class. Therefore, if many instances
+            - This method is called only once per class. Therefore, if many instances
             of a class is created, one of them will be set as 'main' and the others
             will just apply the changes decided by the main instance.
+            - This method is called BEFORE the value in the `CBinding` is changed. Therefore, if you can access the old value by calling the `CBinding.get()` method
 
         Args:
             fonchange: The callback function to execute on value change.
 
         Example:
-            @MyBinding
+        ```python
+            @Binding
             def my_value(cls) -> int:
                 return 0
 
             @my_value.onchange
             def __my_value(self, value: int) -> None:
-                print(f"Value changed to {value}")
-
+                print(f"Value changed to {value}") # New value
+                print(f"Old value was:", self.my_value.get())
+        ```
         Convention:
             Use __NAME pattern for onchange callbacks (e.g., __my_value).
         """

@@ -1,3 +1,4 @@
+import enum
 import unittest
 from unittest.mock import Mock, PropertyMock, patch
 
@@ -40,6 +41,40 @@ class TestQtWidgets(UpdatableConfigTest):
         combo = Combobox(self.parent, "Items", ["A", "B", "C"], "A")
 
         self.assertEqual(combo.widget.count(), 3)
+        self.assertEqual(combo.getCurrentValue(), "A")
+
+    def test_combobox_index_management(self):
+        """Check that the index management works as expected"""
+        l = ["A", "B", "C"]
+        combo = Combobox(self.parent, "Items", l, "A")
+
+        # Check that getting the index for a value works
+        for i in range(len(l)):
+            self.assertEqual(combo.get_index_from_value(l[i]), i)
+
+        # Check that set value works
+        combo.setCurrentValue("B")
+        self.assertEqual(combo.getCurrentValue(), "B")
+
+    def test_combobox_index_management_enum(self):
+        """Check that the index management works as expected"""
+
+        class TestEnum(enum.Enum):
+            A = "a"
+            B = "b"
+            C = "c"
+
+        combo = Combobox(self.parent, "Items", TestEnum, TestEnum.A)
+
+        # Check that getting the index for a value works
+        i = 0
+        for v in TestEnum:
+            self.assertEqual(combo.get_index_from_value(v), i)
+            i += 1
+
+        # Check that set value works
+        combo.setCurrentValue(TestEnum.B)
+        self.assertEqual(combo.getCurrentValue(), TestEnum.B)
 
     def test_combobox_update_values(self):
         combo = Combobox(self.parent, "Items", ["A", "B"], "A")
@@ -55,6 +90,99 @@ class TestQtWidgets(UpdatableConfigTest):
             combo.widget.itemText(0),
             "X",
         )
+
+    def test_combobox_signal_management(self):
+        """Check that the signals are correctly exchanged when the value is a CBinding"""
+        values = ["A", "B", "C", "D", "E"]
+        callback = Mock()
+
+        d = (
+            DummyBinding()
+        )  # We need to have at least one instantiated to allow normal usage...
+
+        binding = CBinding(
+            initial_value="A",
+            parent=self.parent,
+            onchange=callback,
+            owner_class=DummyBinding,
+        )
+
+        combo = Combobox(
+            self.parent, "Test Label", values=values, current_value=binding
+        )
+
+        ### Initial checks
+        self.assertEqual(combo.getCurrentValue(), binding.get())
+
+        ### The Binding changes its value
+        binding.set(d, values[2])
+        # The callback is called. Note: I need to manually call the main thread functions to have the called!
+        self.main_thread_execute()
+        callback.assert_called_once_with(d, values[2])
+        callback.reset_mock()
+
+        self.assertEqual(combo.getCurrentValue(), binding.get())
+
+        ### The combobox changes its value
+        combo.setCurrentValue(values[1])
+        # The callback is called
+        callback.assert_called_once_with(d, values[1])
+        callback.reset_mock()
+        self.assertEqual(combo.getCurrentValue(), binding.get())
+
+    def test_combobox_signal_management_enum(self):
+        """Check that the signals are correctly exchanged when the value is a CBinding"""
+
+        class TestEnum(enum.Enum):
+            A = "a"
+            B = "b"
+            C = "c"
+            D = "d"
+            E = "e"
+
+        callback = Mock()
+
+        d = (
+            DummyBinding()
+        )  # We need to have at least one instantiated to allow normal usage...
+
+        binding = CBinding(
+            initial_value=TestEnum.A,
+            parent=self.parent,
+            onchange=callback,
+            owner_class=DummyBinding,
+        )
+
+        combo = Combobox(
+            self.parent, "Test Label", values=TestEnum, current_value=binding
+        )
+
+        ### Initial checks
+        self.assertEqual(combo.getCurrentValue(), binding.get())
+        callback.assert_not_called()
+
+        ### The Binding changes its value
+        binding.set(d, TestEnum.C)
+        # The callback is called
+        callback.assert_called_once_with(d, TestEnum.C)
+        callback.reset_mock()
+
+        self.assertEqual(combo.getCurrentValue(), binding.get())
+
+        # Set again and check that the callback has not been called
+        binding.set(d, TestEnum.C)
+        callback.assert_not_called()
+
+        ### The combobox changes its value
+        combo.setCurrentValue(TestEnum.B)
+        # The callback is called
+        callback.assert_called_once_with(d, TestEnum.B)
+        callback.reset_mock()
+        self.assertEqual(combo.getCurrentValue(), binding.get())
+
+        # Set again and check that the callback has not been called
+        combo.setCurrentValue(TestEnum.B)
+        callback.assert_not_called()
 
     # ----------------------------------
     # NumericalValueInput (integer)

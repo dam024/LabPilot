@@ -5,9 +5,20 @@ for the different components of the software.
 
 from __future__ import annotations
 
+from enum import Enum
 import logging
 import os
-from typing import Any, Callable, Generic, List, Optional, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeGuard,
+    TypeVar,
+)
 import math
 
 # import matplotlib as mpl
@@ -186,44 +197,112 @@ class Entry(LabelledWidget):
         self.label_wg.setText("" if text is None else text)
 
 
-class Combobox(LabelledWidget):
+def is_list[T](x: List[T] | List[Tuple[T, str]]) -> TypeGuard[List[T]]:
+    return isinstance(x, list) and all(isinstance(item, str) for item in x)
+
+
+def is_tuple_list[
+    T
+](x: List[T] | List[Tuple[T, str]]) -> TypeGuard[List[Tuple[T, str]]]:
+    return isinstance(x, list) and all(
+        isinstance(item, tuple) and len(item) == 2
+        # and isinstance(item[0], T)
+        and isinstance(item[1], str)
+        for item in x
+    )
+
+
+class Combobox[T: str | Enum](LabelledWidget):
     def __init__(
         self,
         parent: QWidget,
         label: str,
-        values: List[str],
-        current_value: Optional[str] | CBinding[str],
+        values: List[T] | Type[T] | List[Tuple[T, str]],
+        current_value: Optional[T] | CBinding[T],
     ):
+        # Compute a list with pair of (value, text). This is much more convenient to have a uniformized data structure...
+        self._uniformize_values(values)
+
         self.combobox = QComboBox()
-        self.combobox.addItems(values)
+        self.combobox.addItems([v[1] for v in self.values])
         self.current_value = current_value
 
         if current_value is not None:
             if isinstance(current_value, CBinding):
-                self.combobox.setCurrentText(current_value.get())
+                # Sets the current value
+                v = current_value.get()
+                # Sets the current value to the combobox (BEFORE THE SIGNAL IS SENT)
+                self.setCurrentValue(v)
 
                 # Add change observation
-                current_value.qt_variable().valueChanged.connect(
-                    self.combobox.setCurrentText
-                )
+                current_value.qt_variable().valueChanged.connect(self.setCurrentValue)
 
                 # Bind the change of the combobox to the value
-                self.combobox.currentTextChanged.connect(current_value.set_signals)
+                self.combobox.currentIndexChanged.connect(
+                    lambda i: current_value.set_signals(self.values[i][0])
+                )
             else:
-                self.combobox.setCurrentText(current_value)
+                # Sets the current value
+                v = current_value
+                # Sets the current value to the combobox
+                self.setCurrentValue(v)
 
         super().__init__(parent, self.combobox, label)
 
-    def update_values(self, values: List[str]):
-        current = self.combobox.currentText()
+    def get_index_from_value(self, value: T) -> int:
+        """Return the index of a value in the combobox
+
+        If the value is not found, `-1` is returned
+        """
+        for i in range(len(self.values)):
+            if self.values[i][0] == value:
+                return i
+
+        return -1
+
+    def setCurrentValue(self, value: T, default: int = -1):
+        """Sets the current value of the combobox
+
+        Args:
+            value (T): Value to set to the combobox
+            default (int, optional): Index of the default value if the value is not found
+        """
+        i = self.get_index_from_value(value)
+        if i >= 0:
+            self.combobox.setCurrentIndex(i)  # Can have value -1, this means 'unset'
+        else:
+            self.combobox.setCurrentIndex(default)
+
+    def getCurrentValue(self) -> T:
+        """Gets the current value of the combobox"""
+        i = self.combobox.currentIndex()
+        return self.values[i][0]
+
+    def _uniformize_values(self, values: List[T] | Type[T] | List[Tuple[T, str]]):
+        """Makes the values in a list that is of a uniform type List[Tuple[T, str]] to have it convenient to work with.
+
+        This function will set `self.values`. Please, work with this attribute!!!
+        """
+        self.values: List[Tuple[T, str]] = []
+        if isinstance(values, type(Enum)):
+            self.values = [(m, m.name) for m in values]
+        elif isinstance(values, list):
+            if len(values) > 0:
+                if is_tuple_list(values):
+                    self.values = values
+                elif is_list(values):
+                    self.values = [(v, str(v)) for v in values]
+
+    def update_values(self, values: List[T] | Type[T] | List[Tuple[T, str]]):
+        """Update the values of the combobox"""
+        current = self.getCurrentValue()
+        # Get the curre
+        self._uniformize_values(values)
 
         self.combobox.clear()
-        self.combobox.addItems(values)
+        self.combobox.addItems([v[1] for v in self.values])
 
-        index = self.combobox.findText(current)
-
-        if index >= 0:
-            self.combobox.setCurrentIndex(index)
+        self.setCurrentValue(current, default=0)
 
 
 class Switch(LabelledWidget):
