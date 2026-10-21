@@ -35,7 +35,7 @@ from labpilot.data_management.measurement_information import RecordingInfos
 
 from labpilot.GUI.objects import GUILogArea, GraphCanvas
 
-from labpilot import config, globalState
+from labpilot import config
 from labpilot.data_management.local_storage import LocalStorage
 
 import labpilot.utils as utils

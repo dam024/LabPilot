@@ -13,7 +13,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from labpilot import config, globalState
+from labpilot import config
 import labpilot.analysis as ana
 from labpilot.GUI.parameters import GUIParameter
 import labpilot.GUI.objects as gui_obj
@@ -50,9 +50,14 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     @property
     def measurement_data_folder(self) -> str:
         """Returns the path to the file where the measurement is saved"""
-        if config.simulation and globalState.reading_recording_subfolder is not None:
+        recording_manager = RecordingManager.main()
+        if (
+            config.simulation
+            and recording_manager.reading_recording_subfolder is not None
+        ):
             folder = os.path.join(
-                config.output_dir_data, globalState.reading_recording_subfolder
+                config.output_dir_data,
+                recording_manager.reading_recording_subfolder,
             )
         else:
             # folder = os.path.join(config.output_dir_data, self.dirname)

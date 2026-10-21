@@ -123,7 +123,10 @@ class ApplicationParameters(GUIParametrable):
             # Stop the recording
             self.window.stop_updates()
         else:
-            if config.simulation and globalState.reading_recording_subfolder is None:
+            if (
+                config.simulation
+                and RecordingManager.main().reading_recording_subfolder is None
+            ):
                 self.window.ask_recording_folder()
 
             # Clear all the plots
@@ -165,7 +168,7 @@ class StatusInterface(GUIParametrable):
 
     @recording.onchange
     def __recording(self, value: str | None):
-        globalState.reading_recording_subfolder = value
+        RecordingManager.main().reading_recording_subfolder = value
 
     @Status
     def measurement(self) -> str | None:
@@ -186,7 +189,10 @@ class StatusInterface(GUIParametrable):
     def __stream_values(self, value: bool):
         globalState.stream_values = value
 
-        if config.simulation and globalState.reading_recording_subfolder is None:
+        if (
+            config.simulation
+            and RecordingManager.main().reading_recording_subfolder is None
+        ):
             return
 
         if self.window is None:

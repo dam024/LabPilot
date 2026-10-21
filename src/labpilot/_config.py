@@ -57,15 +57,7 @@ class GeneralConfig(configparser.ConfigParser):
 
 
 class GlobalState:
-    _recording: bool = False
-    _recording_subfolder: str = "recording"
-    reading_recording_subfolder: str | None = None
     stream_values: bool = True
-
-    @property
-    def recording_subfolder(self) -> str:
-        """Folder where to save the collected data"""
-        return self._recording_subfolder
 
 
 generalConfig = GeneralConfig()

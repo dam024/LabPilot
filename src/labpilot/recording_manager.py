@@ -39,6 +39,7 @@ class RMNoRecording(Exception):
 class RecordingManager:
     _recording_subfolder: str = "recording"
     reading_recording_subfolder: str | None = None
+    """When the application is in simulation mode, indicates the path to the current recording folder. This is not used when the application is NOT in simulation mode"""
     stream_values: bool = True
     _main: "RecordingManager | None" = None
 
@@ -59,12 +60,12 @@ class RecordingManager:
 
     @property
     def recording_subfolder(self) -> str:
-        """Folder where to save the collected data"""
+        """Name of the folder where to save the collected data"""
         return self._recording_subfolder
 
     @property
     def recording_path(self) -> str:
-        """Returns the folder where the current recordings are"""
+        """Returns the path to the folder where the current recordings are"""
         path = os.path.join(config.output_dir_data, self.recording_subfolder)
         return path
 

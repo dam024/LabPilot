@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import labpilot.recording_manager as rm
-from labpilot import config, globalState
+from labpilot import config
 import labpilot.GUI.parameters as params
 from labpilot.GUI.binding import Binding, CBinding, Status
 import labpilot.GUI.objects as gui_obj
@@ -321,7 +321,9 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
                 # self.save_all_arrays = True
                 self.save_data(
                     data,
-                    os.path.join(globalState.recording_subfolder, self.dirname),
+                    os.path.join(
+                        rm.RecordingManager.main().recording_subfolder, self.dirname
+                    ),
                     f"output_{self.recording_save_index}.npy",
                     force_save=True,
                 )
@@ -623,6 +625,8 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
             (05.08.2026), the data are saved only during recording (force_save=True)
             or the latest aggregated data when no recording (force_save=False), so
             it doesn't cause any issue.
+
+            - The measurement directory is automatically added to the final path
         """
         output_dir = (
             config.output_dir_data
@@ -656,7 +660,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         else:
             filename = os.path.join(
                 config.output_dir_data,
-                globalState.reading_recording_subfolder or "",
+                rm.RecordingManager.main().reading_recording_subfolder or "",
                 self.dirname + ".npy",
             )
             # print(filename)
@@ -899,7 +903,7 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
             if not os.path.exists(
                 os.path.join(
                     config.output_dir_data,
-                    globalState.reading_recording_subfolder or "",
+                    rm.RecordingManager.main().reading_recording_subfolder or "",
                     path,
                 )
             ):
@@ -916,7 +920,7 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
             if path is not None:
                 path = os.path.join(
                     config.output_dir_data,
-                    globalState.reading_recording_subfolder or "",
+                    rm.RecordingManager.main().reading_recording_subfolder or "",
                     path,
                 )
 
@@ -1000,7 +1004,8 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
         # Load the files
         if path is None:
             base_path = os.path.join(
-                config.output_dir_data, globalState.reading_recording_subfolder or ""
+                config.output_dir_data,
+                rm.RecordingManager.main().reading_recording_subfolder or "",
             )
         else:
             base_path = path
