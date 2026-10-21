@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QSplitter,
     QScrollArea,
 )
+import traceback
 
 import logging
 
@@ -426,6 +427,7 @@ class MainWindow(QMainWindow, BindingSupport):
             logger.error(
                 f"An error occured while refreshing the plots. Plot update will be stopped: {e}"
             )
+            traceback.print_exc()
             self.plot_timer.stop()
 
     def clear_all_plots(self):
