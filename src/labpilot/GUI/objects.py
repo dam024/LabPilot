@@ -232,7 +232,7 @@ class Combobox[T: str | Enum](LabelledWidget):
                 # Sets the current value
                 v = current_value.get()
                 # Sets the current value to the combobox (BEFORE THE SIGNAL IS SENT)
-                self.setCurrentValue(v)
+                self.setCurrentValue(v, default=0)
 
                 # Add change observation
                 current_value.qt_variable().valueChanged.connect(self.setCurrentValue)
@@ -245,7 +245,7 @@ class Combobox[T: str | Enum](LabelledWidget):
                 # Sets the current value
                 v = current_value
                 # Sets the current value to the combobox
-                self.setCurrentValue(v)
+                self.setCurrentValue(v, default=0)
 
         super().__init__(parent, self.combobox, label)
 
@@ -268,7 +268,7 @@ class Combobox[T: str | Enum](LabelledWidget):
             default (int, optional): Index of the default value if the value is not found
         """
         i = self.get_index_from_value(value)
-        if i >= 0:
+        if i >= 0 or default >= len(self.values):
             self.combobox.setCurrentIndex(i)  # Can have value -1, this means 'unset'
         else:
             self.combobox.setCurrentIndex(default)
