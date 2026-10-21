@@ -36,7 +36,10 @@ Axes = TypeVar("Axes")
 
 
 class PlotBackend(ABC, Generic[Figure, Axes]):
-    _lines: List[PlotContent] = []
+    def __init__(self) -> None:
+        self._lines: List[PlotContent] = []
+        """All the graphical elements of the plot. This contains the lines and the texts"""
+        super().__init__()
 
     @property
     def prefered_export_format(self) -> str:

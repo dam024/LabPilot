@@ -135,6 +135,8 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
             logger.error(e)
             traceback.print_exception(e)
 
+        logger.info(f"Measurement Procedure {self.name} Completed!")
+
         # Stop the recording
         description = f"Measurement procedure: {self.name}"
 
