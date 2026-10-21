@@ -674,9 +674,8 @@ if __name__ == "__main__":
 ```
 <YOUR-PROJECT-FOLDER>/
 ├── src/
-│   ├── readers.py               # Various instrument readers
-│   ├── temperature_readers.py   # Temperature/humidity reader
-│   ├── ofdr_reader.py           # OFDR instrument reader
+│   ├── analysis.py              # Where you place the Analysis (i.e. the plots)
+│   ├── readers.py               # Readers
 │   └── views.py                 # View implementations
 ├── tests/                       # Unit tests
 ├── config.ini                   # Configuration file

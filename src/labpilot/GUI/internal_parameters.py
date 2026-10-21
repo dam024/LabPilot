@@ -126,6 +126,9 @@ class ApplicationParameters(GUIParametrable):
             if config.simulation and globalState.reading_recording_subfolder is None:
                 self.window.ask_recording_folder()
 
+            # Clear all the plots
+            self.window.clear_all_plots()
+
             self.window.start_updates()
 
     def toggle_recording(self) -> None:

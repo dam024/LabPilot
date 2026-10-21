@@ -1,5 +1,8 @@
+import enum
 import json
 import datetime
+
+import labpilot._tools.dynamic_imports as di
 
 
 def serialize(obj):
@@ -17,6 +20,15 @@ def serialize(obj):
             "value": obj.isoformat(),
         }
 
+    if isinstance(obj, enum.Enum):
+        return {
+            "__type__": "Enum",
+            "__class__": obj.__class__.__name__,
+            "__qualname__": obj.__class__.__qualname__,
+            "__module__": obj.__class__.__module__,
+            "value": obj.name,
+        }
+
     raise TypeError(f"Not JSON serializable: {type(obj).__name__}")
 
 
@@ -28,5 +40,10 @@ def deserialize(obj):
 
     if obj.get("__type__") == "date":
         return datetime.date.fromisoformat(obj["value"])
+
+    if obj.get("__type__") == "Enum":
+        t = di.dynamic_obj_import(obj.get("__module__"), obj.get("__qualname__"))
+
+        return t[obj.get("value")]
 
     return obj
