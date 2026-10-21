@@ -26,7 +26,11 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import pyvisa
 
-from labpilot import logger, config
+import logging
+
+logger = logging.getLogger(__name__)
+
+from labpilot import config
 
 
 class SCPIInstrument(ABC):
