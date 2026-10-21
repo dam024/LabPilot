@@ -163,22 +163,6 @@ class SCPIInstrument(ABC):
             logger.error(f"Error sending command {command}: {e}")
             raise
 
-    def reset(self) -> None:
-        """
-        Send a reset command to the instrument.
-
-        Sends the '*RST' command to reset the instrument to its default state.
-        """
-        self.send_command("*RST")
-
-    def clear(self) -> None:
-        """
-        Clear all status and error flags on the instrument.
-
-        Sends the '*CLS' command to clear status and error registers.
-        """
-        self.send_command("*CLS")
-
     @abstractmethod
     def setup(self) -> None:
         """
