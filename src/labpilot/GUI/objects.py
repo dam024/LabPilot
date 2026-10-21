@@ -285,7 +285,7 @@ class Combobox[T: str | Enum](LabelledWidget):
         """
         self.values: List[Tuple[T, str]] = []
         if isinstance(values, type(Enum)):
-            self.values = [(m, m.name) for m in values]
+            self.values = [(m, m.value) for m in values]
         elif isinstance(values, list):
             if len(values) > 0:
                 if is_tuple_list(values):

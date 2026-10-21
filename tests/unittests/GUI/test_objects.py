@@ -66,6 +66,10 @@ class TestQtWidgets(UpdatableConfigTest):
 
         combo = Combobox(self.parent, "Items", TestEnum, TestEnum.A)
 
+        self.assertListEqual(
+            combo.values, [(TestEnum.A, "a"), (TestEnum.B, "b"), (TestEnum.C, "c")]
+        )
+
         # Check that getting the index for a value works
         i = 0
         for v in TestEnum:
