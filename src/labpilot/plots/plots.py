@@ -202,3 +202,7 @@ class GraphSet(Generic[Data], ABC):
     def close(self):
         """Close all figures to save space"""
         self.figure.close()
+
+    def clear(self):
+        """Clear all data from the plot"""
+        self.figure.clear()

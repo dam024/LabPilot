@@ -203,3 +203,9 @@ class PlotBackend(ABC, Generic[Figure, Axes]):
     @abstractmethod
     def update_canvas(self, canvas):
         """Executes code to update the canvas"""
+
+    def clear(self):
+        """Clears the data for all lines"""
+        for line in self._lines:
+            if isinstance(line, Line):
+                self.set_data(line, np.array([]), np.array([]))

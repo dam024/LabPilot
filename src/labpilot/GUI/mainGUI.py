@@ -428,6 +428,11 @@ class MainWindow(QMainWindow, BindingSupport):
             )
             self.plot_timer.stop()
 
+    def clear_all_plots(self):
+        for view in self.view_plots.values():
+            for plot in view:
+                plot.graph.clear()
+
     def stop_updates(self):
         logger.info("Stop experiments")
 
