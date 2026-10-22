@@ -16,6 +16,9 @@ class ExampleStreamer(StreamDataReader[ExampleData]):
     ### TODO: Define the directory where the data of the reader will be stored
     dirname: str = "example_streamer"
 
+    # You can set a delay between each sample. This delay can be controlled at the level of the Reader or at the level of the View! If you control it at the level of the View, this one will be ignored
+    refresh_delay = 1.0
+
     def pull_data(self) -> np.ndarray:
         """Implement this data to read values from your instrument.
 

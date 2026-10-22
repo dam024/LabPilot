@@ -1,9 +1,12 @@
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 import datetime
+from pathlib import Path
+import re
 import threading
 import traceback
 from typing import TYPE_CHECKING, List
+from labpilot.GUI.binding import Status
 import numpy as np
 import os
 from PySide6.QtWidgets import QWidget
@@ -39,6 +42,16 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     procedure_running: bool = False
     running_procedure: "MeasurementProcedure | None" = None
     running_threadpool: ThreadPoolExecutor | None = None
+
+    @Status
+    def foldername(self) -> str:
+        """Name of the folder where to save the data at the end of a measurement procedure"""
+        return self.dirname
+
+    @Status
+    def description(self) -> str:
+        """Description to write in the info.json at the end of the procedure"""
+        return f"Measurement procedure: {self.name}"
 
     def __init__(self) -> None:
         self._check_for_property("dirname", str)
@@ -86,7 +99,18 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     def get_parameters(
         self, frame: QWidget, view: ana.View | None
     ) -> List[GUIParameter]:
+        self.find_free_foldername()
         parameters = super().get_parameters(frame, view)
+        parameters.append(
+            GUIParameter(
+                widget=gui_obj.Entry(frame, label="Folder name:", text=self.foldername)
+            )
+        )
+        parameters.append(
+            GUIParameter(
+                widget=gui_obj.Entry(frame, label="Description:", text=self.description)
+            )
+        )
         parameters.append(
             GUIParameter(
                 widget=gui_obj.ButtonWidget(
@@ -142,17 +166,16 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
 
         logger.info(f"Measurement Procedure {self.name} Completed!")
 
-        # Stop the recording
-        description = f"Measurement procedure: {self.name}"
-
         try:
+            self.find_free_foldername()
             RecordingManager.main().end_recording(
                 self,
                 save_data=save_data,
                 mainWindow=self.window,
-                foldername=self.dirname,
-                description=description,
+                foldername=self.foldername.get(),
+                description=self.description.get(),
             )
+            self.find_free_foldername(current_not_free=True)
         except Exception as e:
             logger.error(e)
             traceback.print_exception(e)
@@ -160,6 +183,29 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         MeasurementProcedure.procedure_running = False
         MeasurementProcedure.running_procedure = None
         MeasurementProcedure.running_threadpool = None
+
+    def find_free_foldername(self, current_not_free: bool = False):
+        """Find a free foldername if the one given is not free
+
+        A folder name is considered as "free" if there is no folder with that name in the data folder
+
+        Args:
+            current_not_free (bool, optional): Set to `True` for the current value of `self.foldername` to be considered as not free
+        """
+        data_folder = Path(config.output_dir_data)
+        i = 0
+        name = self.foldername.get()
+        current_value = data_folder / name
+        while (data_folder / name).exists() or (
+            current_not_free and str(current_value) == str(data_folder / name)
+        ):
+            # Removes the "_xx" pattern from the end of the string
+            result = re.sub(r"_\d+$", "", name)
+
+            name = result + f"_{i}"
+            i += 1
+
+        self.foldername = name
 
     def stop(self):
         """Stops the current procedure if it is running

@@ -23,6 +23,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 import json
 
+from labpilot import config
 from labpilot.GUI.binding import BindingSupport
 from labpilot.GUI.objects import ButtonWidget
 import tests.dummy_classes as dc
@@ -210,6 +211,32 @@ class TestMeasurementProcedureSave(du.UpdatableConfigTest):
         self.assertTrue(file.exists())
         loaded_data = np.load(file)
         np.testing.assert_array_equal(loaded_data, data)
+
+    def test_foldername_update(self):
+        """Check that the foldername property updates correctly in all situations"""
+        # First, create a few test files
+        base_folder = Path(config.output_dir_data)
+        base_foldername = "test_foldername"
+        self.procedure.foldername = base_foldername + "_0"
+
+        self.assertEqual(self.procedure.foldername.get(), base_foldername + "_0")
+
+        # Create a folder
+        f = base_folder / self.procedure.foldername.get()
+        f.mkdir(parents=True)
+        self.assertTrue(f.exists())
+
+        # Ensures the name updates accordingly
+        self.procedure.find_free_foldername()
+        self.assertEqual(self.procedure.foldername.get(), base_foldername + "_1")
+
+        # Test update without changing the name
+        self.procedure.find_free_foldername()
+        self.assertEqual(self.procedure.foldername.get(), base_foldername + "_1")
+
+        # Test update with current_not_free = True
+        self.procedure.find_free_foldername(current_not_free=True)
+        self.assertEqual(self.procedure.foldername.get(), base_foldername + "_2")
 
 
 class TestMeasurementProcedureLogData(du.UpdatableConfigTest):
