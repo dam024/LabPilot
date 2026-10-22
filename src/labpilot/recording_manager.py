@@ -8,6 +8,8 @@ from PySide6.QtWidgets import QInputDialog
 
 import logging
 
+from labpilot.data_management.background_thread_save import BackgroundSaveThread
+
 logger = logging.getLogger(__name__)
 from labpilot import config
 from labpilot.data_management.database_manager import DB
@@ -174,7 +176,8 @@ class RecordingManager:
             recording.save(self.recording_path)
 
             # Rename the folder so that it doesn't get overriden
-            os.rename(
+            # os.rename(
+            BackgroundSaveThread.main().addMoveAction(
                 self.recording_path,
                 os.path.join(
                     config.output_dir_data,

@@ -4,6 +4,7 @@ from tests.utils import UpdatableConfigTest
 
 import labpilot.recording_manager as rm
 from labpilot import config
+import labpilot.data_management.background_thread_save as bgs
 
 
 class TestRecordingManager(UpdatableConfigTest):
@@ -74,7 +75,11 @@ class TestRecordingManager(UpdatableConfigTest):
         info_file = (
             Path(recording_manager.recording_path).parent / foldername / "info.json"
         )
-        # Note: The path is not correct yet, it needs to be updated!!! This needs to be handled by the global state!
+
+        # Execute all save actions
+        for i in range(10):
+            bgs.BackgroundSaveThread.main()._global_thread_action()
+
         self.assertTrue(info_file.exists(), info_file)
 
         # Check the content of the saved recording match the previous one

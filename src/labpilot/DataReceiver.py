@@ -18,6 +18,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+import labpilot.data_management.background_thread_save as bgs
 import labpilot.recording_manager as rm
 from labpilot import config
 import labpilot.GUI.parameters as params
@@ -125,9 +127,6 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         self._stopped = False  # Indicates if the read loop must be stopped
         self._set_if_not_defined("refresh_delay", refresh_delay)
         self.queue = queue.Queue[T]()
-        self.save_queue = queue.Queue[
-            Tuple[np.ndarray, str, bool]
-        ]()  # This is the queue that will remember all the data that must be saved for the current reader
         self.latest_data: T | None = None
         self.recording_save_index = 0
         super().__init__()
@@ -337,8 +336,8 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
 
             # Save the new raw data
             # ts0 = time.perf_counter()
-            if not rm.RecordingManager.main().is_recording:
-                self.save_data(data_aggregated)
+            # if not rm.RecordingManager.main().is_recording:
+            #    self.save_data(data_aggregated)
             # ts1 = time.perf_counter()
             # logger.debug(f"Elapsed time for saving: {ts1-ts0}")
 
@@ -549,6 +548,11 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
 
         self.collector.start()
 
+    def join(self):
+        """Joins the thread of the reader if it is running"""
+        if self.is_running:
+            self.collector.join()
+
     @abstractmethod
     def pull_data(self) -> np.ndarray | None:
         """
@@ -639,7 +643,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
             path = os.path.join(output_dir, filename)
 
         # Since saving takes a long time, this task is delegate to the global queue
-        self.save_queue.put(item=(data, path, force_save))
+        bgs.BackgroundSaveThread.addSaveAction(data, path, force_save)
 
     def _load_file(self, path: str | None = None) -> np.ndarray | None:
         """

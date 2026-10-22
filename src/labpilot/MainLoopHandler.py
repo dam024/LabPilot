@@ -1,8 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import queue
 from threading import Event, Thread
 import time
-from typing import Dict, List, Type
+from typing import Dict, List, Tuple, Type, TypeGuard
 from pathlib import Path
 import numpy as np
 import threading
@@ -12,6 +13,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import labpilot.data_management.background_thread_save as bgs
 from labpilot.data_management.local_storage import LocalStorage
 import labpilot.DataReceiver as dr
 import labpilot.analysis as ana
@@ -93,8 +95,6 @@ class MainLoop(AppHandler):
     def __init__(self):
         self.threads: List[Thread] = []
         self.events: List[Event] = []
-        self.global_thread: threading.Thread | None = None
-        self.global_thread_stop_event = threading.Event()
 
     def select_active_view(self, view: ana.View, adapt_threads: bool = True):
         """Select the active view corresponding to the given index"""
@@ -158,9 +158,8 @@ class MainLoop(AppHandler):
         # Start all the readers
         self.regularize_threads()
 
-        if self.global_thread is None:
-            self.global_thread = threading.Thread(target=self.global_background_thread)
-            self.global_thread.start()
+        bgs.BackgroundSaveThread.main().start()
+
         # for reader in self.readers:
         #    reader.resume()
 
@@ -169,6 +168,8 @@ class MainLoop(AppHandler):
         # Stop the threads
         for reader in self.readers:
             reader.pause()
+
+        bgs.BackgroundSaveThread.main().stop()
 
     def launch_main_thread(self):
         """Execute the code that will be continuously running on the main thread"""
@@ -202,11 +203,11 @@ class MainLoop(AppHandler):
             logger.info("Shutdown complete")
 
             # Shutdown global background thread
-            if self.global_thread is not None:
+            if bgs.BackgroundSaveThread.main().is_running:
                 logger.info("Completing data saving...")
 
-                self.global_thread_stop_event.set()
-                self.global_thread.join()
+                bgs.BackgroundSaveThread.main().stop()
+                bgs.BackgroundSaveThread.main().join()
 
                 logger.info("Data saving completed!")
 
@@ -219,52 +220,6 @@ class MainLoop(AppHandler):
         Note:
             When this methods returns, the program will stop. Therefore, it is the responsibility of this method to run the infinite loop
         """
-
-    def global_background_thread(self):
-        """This method handles a thread that will manage long run analysis for the different readers.
-
-        For example, saving data takes a long time, so it will be handled here
-        """
-
-        while not self.global_thread_stop_event.is_set():
-            is_alive = False
-            is_queue_empty = True
-            for reader in self.readers:
-                if reader.is_running:
-                    is_alive = True
-                ###### Data saving
-                data = None
-                filename = None
-                # Get the data to save
-                # if reader.save_all_arrays:
-                #    if not reader.save_queue.empty():
-                #        data, filename = reader.save_queue.get_nowait()
-                #
-                # else:
-                #    while not reader.save_queue.empty():
-                #        data, filename = reader.save_queue.get_nowait()
-                should_save = False
-                while not reader.save_queue.empty() and not should_save:
-                    data, filename, should_save = reader.save_queue.get_nowait()
-
-                is_queue_empty = is_queue_empty and reader.save_queue.empty()
-
-                # Save the values
-                if data is not None and filename is not None:
-                    path = Path(filename)
-                    #
-                    path.parent.mkdir(parents=True, exist_ok=True)
-                    try:
-                        np.save(path, data)
-                    except PermissionError:
-                        logger.error(f"Permission denied for {path}")
-
-            if not is_alive:
-                break
-            if is_queue_empty:
-                time.sleep(0.5)
-
-        self.global_thread = None
 
 
 class PlotsGUIMainLoop(MainLoop):

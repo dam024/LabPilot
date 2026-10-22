@@ -28,7 +28,7 @@ from labpilot.DataReceiver import (
     StreamDataReader,
 )
 from labpilot import config
-
+import labpilot.data_management.background_thread_save as bgs
 from labpilot.GUI.binding import Binding
 import tests.dummy_classes as dc
 import tests.utils as tu
@@ -265,18 +265,20 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         reader = self.MinimalReader()
 
         mock_queue = unittest.mock.MagicMock()
-        reader.save_queue = mock_queue
+        bgs.BackgroundSaveThread.save_queue = mock_queue
         data = np.array([[1.0, 2.0], [3.0, 4.0]])
         reader.save_data(data, subfolder="test", filename="test.npy", force_save=True)
 
         mock_queue.put.assert_called_once()
         args, kwargs = mock_queue.put.call_args
         expected_path = Path(config.output_dir_data, "test", "test.npy")
+
+        self.assertEqual(kwargs["item"][0], "s")
         np.testing.assert_almost_equal(
-            kwargs["item"][0], np.array([[1.0, 2.0], [3.0, 4.0]])
+            kwargs["item"][1], np.array([[1.0, 2.0], [3.0, 4.0]])
         )
-        self.assertEqual(str(expected_path), kwargs["item"][1])
-        self.assertTrue(kwargs["item"][2])
+        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertTrue(kwargs["item"][3])
 
     def test_load_file_nonexistent_file(self):
         """Test _load_file when file doesn't exist."""
@@ -335,54 +337,63 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
 
     def test_save_data_default_paths(self):
         """Test save_data with default paths."""
+        backgroundSaveThread = bgs.BackgroundSaveThread
         reader = self.MinimalReader()
         reader.dirname = "test_reader"
-        reader.save_queue = unittest.mock.MagicMock()
+        backgroundSaveThread.save_queue = unittest.mock.MagicMock()
         reader.save_data(np.array([[1.0, 2.0]]))
 
-        args, kwargs = reader.save_queue.put.call_args
+        args, kwargs = backgroundSaveThread.save_queue.put.call_args
         expected_path = Path(config.output_dir_data, "test_reader.npy")
-        np.testing.assert_almost_equal(kwargs["item"][0], np.array([[1.0, 2.0]]))
-        self.assertEqual(str(expected_path), kwargs["item"][1])
-        self.assertFalse(kwargs["item"][2])
+
+        self.assertEqual(kwargs["item"][0], "s")
+        np.testing.assert_almost_equal(kwargs["item"][1], np.array([[1.0, 2.0]]))
+        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertFalse(kwargs["item"][3])
 
     def test_save_data_with_custom_subfolder(self):
         """Test save_data with custom subfolder."""
+        backgroundSaveThread = bgs.BackgroundSaveThread
         reader = self.MinimalReader()
         reader.dirname = "test_reader"
-        reader.save_queue = unittest.mock.MagicMock()
+        backgroundSaveThread.save_queue = unittest.mock.MagicMock()
         reader.save_data(np.array([[1.0, 2.0]]), subfolder="myfolder")
 
-        args, kwargs = reader.save_queue.put.call_args
+        backgroundSaveThread.save_queue.put.assert_called_once()
+        args, kwargs = backgroundSaveThread.save_queue.put.call_args
         expected_path = Path(config.output_dir_data, "myfolder", "test_reader.npy")
 
-        np.testing.assert_almost_equal(kwargs["item"][0], np.array([[1.0, 2.0]]))
-        self.assertEqual(str(expected_path), kwargs["item"][1])
-        self.assertFalse(kwargs["item"][2])
+        self.assertEqual(kwargs["item"][0], "s")
+        np.testing.assert_almost_equal(kwargs["item"][1], np.array([[1.0, 2.0]]))
+        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertFalse(kwargs["item"][3])
 
     def test_save_data_with_custom_filename(self):
         """Test save_data with custom filename."""
+        backgroundSaveThread = bgs.BackgroundSaveThread
         reader = self.MinimalReader()
         reader.dirname = "test_reader"
-        reader.save_queue = unittest.mock.MagicMock()
+        backgroundSaveThread.save_queue = unittest.mock.MagicMock()
 
         reader.save_data(np.array([[1.0, 2.0]]), filename="custom.npy")
 
-        args, kwargs = reader.save_queue.put.call_args
+        args, kwargs = backgroundSaveThread.save_queue.put.call_args
         expected_path = Path(config.output_dir_data, "custom.npy")
 
-        np.testing.assert_almost_equal(kwargs["item"][0], np.array([[1.0, 2.0]]))
-        self.assertEqual(str(expected_path), kwargs["item"][1])
-        self.assertFalse(kwargs["item"][2])
+        self.assertEqual(kwargs["item"][0], "s")
+        np.testing.assert_almost_equal(kwargs["item"][1], np.array([[1.0, 2.0]]))
+        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertFalse(kwargs["item"][3])
 
     def test_save_queue_force_save_behavior(self):
         """Test that force_save affects the save_queue."""
+        backgroundSaveThread = bgs.BackgroundSaveThread
         reader = self.MinimalReader()
         reader.dirname = "test_reader"
-        reader.save_queue = unittest.mock.MagicMock()
+        backgroundSaveThread.save_queue = unittest.mock.MagicMock()
         reader.save_data(np.array([[1.0, 2.0]]), force_save=False)
 
-        args, kwargs = reader.save_queue.put.call_args
+        args, kwargs = backgroundSaveThread.save_queue.put.call_args
         self.assertFalse(kwargs.get("force_save", False))
 
     def test_load_file_raises_on_nonexistent(self):
@@ -411,6 +422,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
 
     def test_recording(self):
         """Test that the Reader is saving adding the recording files to the queue when recording is ON"""
+        backgroundSaveThread = bgs.BackgroundSaveThread.main()
         reader = self.MinimalReader()
 
         recording_manager = RecordingManager.main()
@@ -422,9 +434,15 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         recording_manager.end_recording(self, save_data=False)
 
         # Check that the file is in the queue
-        self.assertFalse(reader.save_queue.empty(), "Nothing was added to the queue...")
+        self.assertFalse(
+            backgroundSaveThread.save_queue.empty(), "Nothing was added to the queue..."
+        )
 
-        data, path, force_save = reader.save_queue.get_nowait()
+        tpl = backgroundSaveThread.save_queue.get_nowait()
+
+        assert bgs.is_save_action(tpl)
+
+        _, data, path, force_save = tpl
 
         np.testing.assert_array_equal(data, reader.pull_data())
         self.assertEqual(os.path.basename(path), "output_0.npy")
@@ -1128,10 +1146,11 @@ class TestReaderConfigSimulation(tu.UpdatableConfigTest):
 
     def test_simulation_mode_save_data(self):
         """Test save_data in simulation mode."""
+        backgroundSaveThread = bgs.BackgroundSaveThread
         self.reader.dirname = "test_reader"
-        self.reader.save_queue = unittest.mock.MagicMock()
+        backgroundSaveThread.save_queue = unittest.mock.MagicMock()
         self.reader.save_data(np.array([[1.0, 2.0]]))
-        self.reader.save_queue.put.assert_called()
+        backgroundSaveThread.save_queue.put.assert_called()
 
     def test_real_mode_start_reader_requires_on_start(self):
         """Test that start_reader in real mode calls on_start."""

@@ -7,6 +7,7 @@ from pathlib import Path
 import labpilot
 import logging
 
+from labpilot.data_management.background_thread_save import BackgroundSaveThread
 from labpilot.data_management.database_manager import DB
 
 logger = logging.getLogger(labpilot.__name__ + "." + __name__)
@@ -38,6 +39,7 @@ class UpdatableConfigTest(unittest.TestCase):
         self.addCleanup(self._reset_config)
         self.addCleanup(self._reset_bindings)
         self.addCleanup(self._reset_recording_manager)
+        self.addCleanup(self._reset_background_save_thread)
 
         # Create local storage path
         path = Path(config.get("GENERAL", "local_storage_path"))
@@ -78,6 +80,10 @@ class UpdatableConfigTest(unittest.TestCase):
     def _reset_recording_manager(self):
         """Reset the Recording Manager state"""
         RecordingManager._main = None
+
+    def _reset_background_save_thread(self):
+        """Reset the Background Save Thread state"""
+        BackgroundSaveThread._main = None
 
     def tearDown(self) -> None:
         """Clean up configuration and resources after each test method.

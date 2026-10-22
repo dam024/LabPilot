@@ -24,6 +24,7 @@ Key Components:
 - DataReceiver.LiveDataReader: Base class for data readers with status and thread lifecycle
 """
 
+from pathlib import Path
 from typing import Any, List, Type
 import unittest
 import time
@@ -31,11 +32,14 @@ import time
 from PySide6.QtWidgets import QApplication
 
 
+from labpilot.DataReceiver import LiveDataReader
 from labpilot.GUI.mainGUI import MainGUILoop, MainWindow
 from labpilot import config, utils
+from labpilot.recording_manager import RecordingManager
 import tests.utils as tu
 import tests.dummy_classes as dummy
 from tests.utils import use_gui
+import labpilot.data_management.background_thread_save as bgs
 
 
 def get_test_readers() -> list:
@@ -150,8 +154,9 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
             if hasattr(reader, "collector") and reader.collector is not None:
                 reader.collector.join()
 
-        if self.loop.global_thread is not None:
-            self.loop.global_thread.join()
+        bg = bgs.BackgroundSaveThread.main()
+        if bg.global_thread is not None:
+            bg.global_thread.join()
 
     @use_gui
     def test_select_ch1_ch2_view(self):
@@ -303,6 +308,9 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         self.loop.start_threads()
         self.loop.main_thread_loop()
 
+        # Ensures there are readers
+        self.assertGreater(len(self.loop.readers), 0)
+
         # Verify that all readers have a collector thread and it's running
         for reader in self.loop.readers:
             self.assertTrue(
@@ -320,14 +328,17 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
                 f"Reader {reader.__class__.__name__} collector thread should be running",
             )
 
-        # Verify that the save queue is available for each reader
-        for reader in self.loop.readers:
-            self.assertTrue(
-                hasattr(reader, "save_queue"),
-                f"Reader {reader.__class__.__name__} should have a save_queue",
-            )
-            # save_queue should be a Queue object
-            self.assertIsNotNone(reader.save_queue)
+        # Verify that the save queue is available
+        bg = bgs.BackgroundSaveThread.main()
+        self.assertTrue(
+            hasattr(bg, "save_queue"),
+            f"Reader {bg.__class__.__name__} should have a save_queue",
+        )
+        # save_queue should be a Queue object
+        self.assertIsNotNone(bg.save_queue)
+
+        # The save queue must be empty, since nothing is saved when no recording is running
+        self.assertTrue(bg.save_queue.empty())
 
         # Check that the dirname (for file saving) is set correctly
         for reader in self.loop.readers:
@@ -539,13 +550,54 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         self.loop.start_threads()
         self.loop.main_thread_loop()
 
-        # Verify that readers have save_queue and can save data
+        # Verify that the save queue is available
+        bg = bgs.BackgroundSaveThread.main()
+        self.assertTrue(
+            hasattr(bg, "save_queue"),
+            f"Reader {bg.__class__.__name__} should have a save_queue",
+        )
+        # save_queue should be a Queue object
+        self.assertIsNotNone(bg.save_queue)
+
+        # The save queue must be empty, since nothing is saved when no recording is running
+        self.assertTrue(bg.save_queue.empty())
+
+        # Start a recording
+        recording_manager = RecordingManager.main()
+        recording_manager.start_recording(self)
+
+        # Check that some readers are running
+        running_readers: List[LiveDataReader] = []
         for reader in self.loop.readers:
-            self.assertTrue(
-                hasattr(reader, "save_queue"),
-                f"Reader {reader.__class__.__name__} should have save_queue",
-            )
-            self.assertIsNotNone(reader.save_queue)
+            if reader.is_running:
+                running_readers.append(reader)
+
+        self.assertGreater(len(running_readers), 0)
+        self.assertEqual(
+            len(running_readers),
+            len(self.loop.readers),
+            "It's important that some readers are not running! Please, choose another view if necessary",
+        )  # Note: I guess this is for future improvements... Replace with assertNotEqual if I ever fancy change the view and check this case...
+
+        # Check that the BackgroundSaveThread is running
+        self.assertIsNotNone(bg.global_thread)
+        assert bg.global_thread is not None
+        self.assertTrue(bg.global_thread.is_alive())
+
+        # Wait to leave some time for the queue to fill-in
+        time.sleep(0.01)
+
+        # Check that the queue is not empty now
+        self.assertFalse(bg.save_queue.empty())
+
+        # End the recording
+        recording_foldername = "test_recording"
+        recording_manager.end_recording(
+            self,
+            save_data=True,
+            foldername=recording_foldername,
+            description="Description of a recording",
+        )
 
         # Stop the experiment to finalize files
         self.loop.stop_threads()
@@ -569,6 +621,30 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
                 str,
                 f"Reader {reader.__class__.__name__}.dirname should be a valid string path",
             )
+
+        # Join the threads
+        self.join_threads()
+
+        # Check that some files were saved for each reader that was running
+        base_path = Path(config.output_dir_data) / recording_foldername
+        for reader in self.loop.readers:
+            reader_path = base_path / reader.dirname
+            self.assertTrue(
+                reader_path.exists(),
+                f"Reader path doesn't exist in recording at path: {reader_path}",
+            )
+            # Checks that at least one data file exists
+            data_file = reader_path / "output_0.npy"
+            self.assertTrue(
+                data_file.exists(),
+                f"No data file saved for reader {reader.name}: {data_file}",
+            )
+
+        # Check info.json
+        info_path = base_path / "info.json"
+        self.assertTrue(
+            info_path.exists(), f"No info.json file saved for recording: {info_path}"
+        )
 
     @use_gui
     def test_thread_lifecycle_validation(self):
