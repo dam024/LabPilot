@@ -1377,6 +1377,57 @@ class TestReaderConfiguration(tu.UpdatableConfigTest):
         self.assertIsInstance(reader.refresh_delay, float)
 
 
+class TestReaderRefreshDelay(tu.UpdatableConfigTest):
+    """Test reader configuration and parameters."""
+
+    class ConfigReader(LiveDataReader):
+        """Reader for config testing."""
+
+        name: str = "ConfigReader"
+        dirname: str = "config_reader"
+
+        @Binding
+        def refresh_delay(self) -> float:
+            return 1.0
+
+        def pull_data(self) -> np.ndarray:
+            return np.array([[1.0, 2.0], [3.0, 4.0]])
+
+        def process_data(self, raw_data: np.ndarray) -> dc.TestData:
+            data = dc.TestData()
+            data.x = raw_data[0, :]
+            data.y = raw_data[1, :]
+            return data
+
+        def on_stop(self):
+            pass
+
+    def test_default_refresh_delay(self):
+        """Test default refresh_delay value."""
+        reader = self.ConfigReader()
+        self.assertEqual(reader.refresh_delay.get(), 1.0)
+
+    def test_custom_refresh_delay(self):
+        """Test custom refresh_delay value."""
+        reader = self.ConfigReader(refresh_delay=0.5)
+        self.assertEqual(
+            reader.refresh_delay.get(),
+            1.0,
+            "The parameter must be ignored when the `refresh_delay` is defined in the class",
+        )
+
+    def test_readme_delay_property(self):
+        """Test that readme_delay property exists and is configurable."""
+        reader = self.ConfigReader()
+
+        # Test setting property
+        reader.refresh_delay = 0.1
+        self.assertEqual(reader.refresh_delay.get(), 0.1)
+
+        # Test that it's a float
+        self.assertIsInstance(reader.refresh_delay.get(), float)
+
+
 class TestStreamReaderConfiguration(tu.UpdatableConfigTest):
     """Test StreamDataReader configuration."""
 

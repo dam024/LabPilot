@@ -119,6 +119,8 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         Args:
             refresh_delay (float, optional): Time to wait at the end of the refresh loop before rerunning it.
                 Units: seconds. Default: 0.0
+                Note: If you define this value in the class, this parameter is ignored
+
         """
         self._check_for_property("name", str)
         self.title = self.name
@@ -283,8 +285,8 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
             end_time = time.perf_counter()
             # Compute the time that was required to read the data from the loop, so that we can substract is from the total wait time
             collection_time = end_time - start_time
-            if d < collection_time:
-                stop_event.wait(collection_time - d)
+            if collection_time < d:
+                stop_event.wait(d - collection_time)
 
     def _data_collection_step(self):
         """

@@ -152,7 +152,7 @@ class TestReadersThreads(UpdatableConfigTest):
 
         # TEST START
         stop_event = threading.Event()
-        refresh_delay = 1
+        refresh_delay = 1.0
 
         reader = BaseReader(refresh_delay=refresh_delay)
 
@@ -165,6 +165,11 @@ class TestReadersThreads(UpdatableConfigTest):
         self.assertLessEqual(
             execution_time, refresh_delay * 1.01
         )  # Allows the loop to take 1% more time
+        self.assertLess(
+            abs(execution_time - refresh_delay) / refresh_delay,
+            0.01,
+            f"Execution took {execution_time:.3f}, while refresh delay is {refresh_delay:.3f}",
+        )
 
 
 class TestMethodRethreading(UpdatableConfigTest):
