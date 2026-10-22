@@ -148,6 +148,19 @@ def main():
         help="Path to the configuration used during the data recording. This argument is necessary to be able to identify which folders needs to be checked",
     )
 
+    aggregate_parser.add_argument(
+        "-z",
+        "--no-zip",
+        action="store_true",
+        help="If this flag is given, the ZIP file containing the raw `output_xx.npy` files will NOT be created. Note: If you don't give the -d flag, they will be deleted anyway!!!",
+    )
+    aggregate_parser.add_argument(
+        "-d",
+        "--no-delete",
+        action="store_true",
+        help="If this flag is given, the raw `output_xx.npy` files will NOT be deleted",
+    )
+
     # Parse the arguments
     args = parser.parse_args()
 
@@ -178,16 +191,42 @@ def main():
     elif args.command == "version":
         print(get_version())
     elif args.command == "aggregate":
+        assert Path(
+            args.config
+        ).exists(), f"The config file {args.config} does not exist!"
         config.read(args.config)
+        # Arguments handling
+        zip_save = not args.no_zip
+        delete_detail_files = not args.no_delete
+
+        if not zip_save and delete_detail_files:
+            v = ""
+            while v.lower() not in ["n", "y"]:
+                print(
+                    "Are you really sure you want to delete the raw detail files (output_xx.npy) without creating a ZIP file? (If ZIP files exists, they will be deleted)"
+                )
+                v = input("Do you wish to continue? [y/N]")
+
+            # Quit if the use desides so
+            if v.lower() == "n":
+                exit()
 
         # Freshly taken data
         if os.path.exists(config.output_dir):
-            aggregate.aggregate(config.output_dir)
+            aggregate.aggregate(
+                config.output_dir,
+                zip_save=zip_save,
+                delete_detail_outputs=delete_detail_files,
+            )
 
         # Already saved data
         data_analysis = config.get("GENERAL", "data_analysis_folder")
         if os.path.exists(data_analysis):
-            aggregate.aggregate(data_analysis)
+            aggregate.aggregate(
+                data_analysis,
+                zip_save=zip_save,
+                delete_detail_outputs=delete_detail_files,
+            )
     else:
         print(f"Error: Unknown command `{args.command}`")
         exit()

@@ -16,6 +16,10 @@ import functools
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 import labpilot._logging as log
 
 
@@ -50,12 +54,16 @@ def resample(arr: np.ndarray, every: int):
     return m
 
 
-def read_data(path_template: str, zip_delete: bool = False) -> np.ndarray:
+def read_data(
+    path_template: str, zip_save: bool = False, delete_detail_outputs: bool = True
+) -> np.ndarray:
     """From a recording, aggregate all data from all outputs to create a single file with everything
 
     Args:
         path_template (str): Path to one of the "output_%1.npy" file to aggregate
-        zip_delete (bool, optional): If `True`, will ZIP all "output_%1.npy" files into a single ZIP file and delete the original files
+        zip_delete (bool, optional): If `True`, will ZIP all "output_%1.npy" files into a single ZIP file and delete the original files. If `False`, the ZIP file will be deleted if it exists
+        delete_detail_outputs (bool, optional): If `True`, all detail output files (output_xx.npy) will be deleted after the aggragation if it was successful
+
 
     Returns:
         np.ndarray: Description
@@ -88,16 +96,19 @@ def read_data(path_template: str, zip_delete: bool = False) -> np.ndarray:
         np.save(direct_file, data)
 
     # Find all output_*.npy files
-
-    if zip_delete and not os.path.exists(zip_file):
+    if zip_save and not os.path.exists(zip_file):
         # Zip all output_%1.npy files into a single zip file and deletes them
 
         # Create ZIP archive
         with ZipFile(zip_file, "w", compression=ZIP_DEFLATED) as zipf:
             for file in tqdm.tqdm(all_files, desc="ZIP creation"):
                 zipf.write(file, arcname=file.name)
+    elif not zip_save and os.path.exists(zip_file):
+        # If we don't save as ZIP, but the ZIP file exists, removes it
+        os.remove(zip_file)
+        logger.warning(f"Removed ZIP file: {zip_file}")
 
-    if len(all_files) > 0 and zip_delete:
+    if len(all_files) > 0 and delete_detail_outputs:
         # Delete original files
         for file in tqdm.tqdm(all_files, desc="detail files suppression"):
             file.unlink()
