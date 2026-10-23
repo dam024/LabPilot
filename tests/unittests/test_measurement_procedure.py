@@ -27,6 +27,7 @@ from labpilot import config
 from labpilot.GUI.binding import BindingSupport
 from labpilot.GUI.objects import ButtonWidget
 import tests.dummy_classes as dc
+from tests.dummy_classes import TestStreamSubclass
 import tests.utils as du
 
 # from labpilot.data_management.measurement_information import (
@@ -94,6 +95,39 @@ class TestDataMeasurementFile(MeasurementProcedure):
 
     def get_analysis(self) -> List[ana.DataAnalysis]:
         analysis: List[ana.DataAnalysis] = [self]
+
+        return analysis
+
+
+class TestMeasurementAnalysis(MeasurementProcedure):
+    """Test subclass with a fixed measurement file name."""
+
+    name: str = "Test Data Measurement"
+    title: str = "Test Title"
+    dirname: str = "test_data_file"
+
+    def __init__(self, *args, **kwargs):
+        self.dirname = "test_data_file"
+        self.graphs = []
+        super().__init__(*args, **kwargs)
+
+    @ana.reader
+    def test_streamer_subclass(self) -> TestStreamSubclass:
+        ...
+
+    def execute(self) -> np.ndarray:
+        """Placeholder execute method."""
+        data = np.zeros((2, 5))
+        data[0] = np.arange(5)
+        data[1] = np.arange(5, 10)
+        return data
+
+    def refresh_plots(self):
+        """Placeholder refresh_plots method."""
+        pass
+
+    def get_analysis(self) -> List[ana.DataAnalysis]:
+        analysis: List[ana.DataAnalysis] = [self, dc.TestAnalysis()]
 
         return analysis
 
@@ -889,6 +923,55 @@ class TestMeasurementProcedureReaders(du.UpdatableConfigTest):
         # are not cleared (they are still in the list)
         # Note: The clear() method is called on each reader, but the readers
         # list is not emptied
+
+    def test_set_readers_from_analysis(self):
+        """Test that the analysis are initialized appropriately"""
+
+        view = TestMeasurementAnalysis()
+
+        # Check that all readers are gotten
+        readers_types = ana.View.get_all_readers_dependencies([view])
+        readers = [reader() for reader in readers_types]
+
+        self.assertListEqual(
+            readers_types, [dc.TestStreamSubclass, dc.TestReader, dc.TestStreamer]
+        )
+
+        meas_analysis = view.analysis[0]
+        meas_analysis.set_readers(readers)
+        # Check that it is setup correctly
+        self.assertTrue(meas_analysis.has_reader(readers[0]))
+
+        test_analysis = view.analysis[1]
+        test_analysis.set_readers(readers)
+        # Check that it is setup correctly
+        self.assertTrue(test_analysis.has_reader(readers[1]))
+        self.assertTrue(test_analysis.has_reader(readers[2]))
+
+    def test_set_readers_from_view(self):
+        """Test that the analysis are initialized appropriately"""
+
+        view = TestMeasurementAnalysis()
+
+        # Check that all readers are gotten
+        readers_types = ana.View.get_all_readers_dependencies([view])
+        readers = [reader() for reader in readers_types]
+
+        self.assertListEqual(
+            readers_types, [dc.TestStreamSubclass, dc.TestReader, dc.TestStreamer]
+        )
+
+        # Set the readers
+        view.set_readers(readers)
+
+        meas_analysis = view.analysis[0]
+        # Check that it is setup correctly
+        self.assertTrue(meas_analysis.has_reader(readers[0]))
+
+        test_analysis = view.analysis[1]
+        # Check that it is setup correctly
+        self.assertTrue(test_analysis.has_reader(readers[1]))
+        self.assertTrue(test_analysis.has_reader(readers[2]))
 
 
 if __name__ == "__main__":

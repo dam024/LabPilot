@@ -604,7 +604,7 @@ class BindingSupport:
             param = self.my_param
     """
 
-    parametrables: Dict[str, "BindingSupport"] = {}
+    parametrables: Dict[str, "Type[BindingSupport]"] = {}
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -659,7 +659,7 @@ class BindingSupport:
             self._on_exit,
         )
 
-        BindingSupport.parametrables[self.__class__.__name__] = self
+        BindingSupport.parametrables[self.__class__.__name__] = self.__class__
 
         # main instance management
         if self.__class__.__main_instance__ is None:
@@ -768,7 +768,11 @@ class BindingSupport:
             if infos.has_param(cls, name):
                 value = infos.get_parameter(cls, name)
                 # getattr(cls, name)._set(value)
-                getattr(cls, name).set_signals(value)
+                # If the Binding has not been instantiated, we cannot execute the `onchange` method. Therefore, we need to execute something else
+                if cls.__main_instance__ is None:
+                    getattr(cls, name)._set(value)
+                else:
+                    getattr(cls, name).set_signals(value)
 
     @classmethod
     def _instantiate_bindings(cls) -> None:

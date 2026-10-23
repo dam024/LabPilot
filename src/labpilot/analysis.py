@@ -614,6 +614,9 @@ class View(GUIParametrable, tools.IgnorableClass):
 
     refresh_delay: float | Binding[float] | None = None
 
+    __all_readers: List[dr.LiveDataReader]
+    """List of all available `LiveDataReader`. It also contains the ones that are NOT present in the current view!"""
+
     def __init__(self) -> None:
         """
         Initialize a View instance.
@@ -817,7 +820,7 @@ class View(GUIParametrable, tools.IgnorableClass):
         """
         self.__all_readers = readers
         for analysis in self.analysis:
-            analysis.set_readers(readers)
+            DataAnalysis.set_readers(analysis, readers)
 
     def has_reader(self, reader: dr.LiveDataReader) -> bool:
         """

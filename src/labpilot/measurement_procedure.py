@@ -17,6 +17,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from labpilot import config
+import labpilot.DataReceiver as dr
 import labpilot.analysis as ana
 from labpilot.GUI.parameters import GUIParameter
 import labpilot.GUI.objects as gui_obj
@@ -84,6 +85,10 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         path = os.path.join(self.measurement_data_folder, "measurements.npy")
 
         return path
+
+    def set_readers(self, readers: List[dr.LiveDataReader]):
+        # This method needs to be overriden, because it has an hybrid behavior between DataAnalysis and View. Otherwise, it will use the one from DataAnalysis, which is wrong in general...
+        ana.View.set_readers(self, readers)
 
     def load_plot_data(self):
         super().load_plot_data()
@@ -193,7 +198,7 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
             current_not_free (bool, optional): Set to `True` for the current value of `self.foldername` to be considered as not free
         """
         data_folder = Path(config.output_dir_data)
-        i = 0
+        i = 1
         name = self.foldername.get()
         current_value = data_folder / name
         while (data_folder / name).exists() or (

@@ -9,6 +9,7 @@ Important:
 This program will first aggregate the data from the fresh measurements and also from older, saved measurements. If a recording has already been aggregated, it will be ignored.é
 """
 import os
+from pathlib import Path
 from typing import Dict, List, Tuple
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ import json
 import logging
 
 logger = logging.getLogger(__name__)
-from labpilot.utils import list_experiment_folders, read_data
+from labpilot.scripting import list_experiment_folders, read_data
 
 # Setup arguments
 parser = argparse.ArgumentParser(
@@ -78,7 +79,7 @@ def aggregate(
 
 
 def _aggregate(
-    experiment_folders: List[str],
+    experiment_folders: List[str] | List[Path],
     zip_save: bool = True,
     delete_detail_outputs: bool = True,
 ):

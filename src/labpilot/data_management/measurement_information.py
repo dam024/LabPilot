@@ -17,6 +17,10 @@ class ForbidenKeyError(Exception):
     pass
 
 
+class JSONImportError(Exception):
+    pass
+
+
 class Infos:
     __authorized_keys__: List[str] | None = None
 
@@ -26,13 +30,23 @@ class Infos:
     def load(self, path: str):
         # try:
         with open(os.path.join(path, "info.json"), "r") as f:
-            self._values = json.load(f, object_hook=deserialize)
+            values = json.load(f, object_hook=deserialize)
+
+            if values["__type__"] != self.__class__.__name__:
+                raise JSONImportError(
+                    f"The file you tried to load does not contain data of the expected type. Obtained type: {values['__type__']}. Expected type: {self.__class__.__name__}"
+                )
+            self._values = values["values"]
         # except Exception as e:
         # logger.error(f"Error when opening file {path}")
         # logger.exception(e)
 
     def to_dict(self) -> dict:
-        return self._values
+        return {
+            "__type__": self.__class__.__name__,
+            "version": "1.0.0",
+            "values": self._values,
+        }
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), default=serialize)
@@ -53,6 +67,12 @@ class Infos:
                 f"You are not authorized to set the key `{index}` in object of class `{self.__class__.__name__}`. Authorized keys are: {self.__authorized_keys__}"
             )
         self._values[index] = value
+
+    def __eq__(self, value: object, /) -> bool:
+        if not isinstance(value, self.__class__):
+            return False
+
+        return self._values == value._values
 
 
 class ParametrizedInfos(Infos):
@@ -133,21 +153,3 @@ class RecordingInfos(ParametrizedInfos):
                 setattr(recording, key, self[key])
 
         return recording
-
-    def __eq__(self, value: object, /) -> bool:
-        if not isinstance(value, RecordingInfos):
-            return False
-
-        return self._values == value._values
-
-        assert self.__authorized_keys__ is not None
-
-        for key in self.__authorized_keys__:
-            if (
-                key not in self._values
-                or key not in value._values
-                or self[key] != value[key]
-            ):
-                return False
-
-        return True

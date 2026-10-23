@@ -36,6 +36,11 @@ class GeneralConfig(configparser.ConfigParser):
         return self.get("GENERAL", "plots_output_dir")
 
     @property
+    def analyse_data(self) -> str:
+        """Path to the directory where the data are archived"""
+        return self.get("GENERAL", "data_analysis_folder")
+
+    @property
     def database_url(self) -> str:
         """Returns the URL that will allow connexion to the database"""
         return self.get("DATABASE", "database_url")

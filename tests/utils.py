@@ -130,16 +130,16 @@ class UpdatableConfigTest(unittest.TestCase):
         """
         # Reset the Bindings...
         for bindingInstance in BindingSupport.parametrables.values():
-            if bindingInstance.__class__.__binding_instantiated__:
-                bindingInstance.__class__.__binding_instantiated__ = False
-                for _, binding in bindingInstance.__class__._bindings.items():
+            if bindingInstance.__binding_instantiated__:
+                bindingInstance.__binding_instantiated__ = False
+                for _, binding in bindingInstance._bindings.items():
                     if hasattr(binding, "_variable"):
                         del binding._variable
 
             # Clean up any remaining state
-            if bindingInstance.__class__.__main_instance__ is not None:
-                bindingInstance.__class__.__main_instance__ = None
-            self.assertIsNone(bindingInstance.__class__.__main_instance__)
+            if bindingInstance.__main_instance__ is not None:
+                bindingInstance.__main_instance__ = None
+            self.assertIsNone(bindingInstance.__main_instance__)
 
         BindingSupport.parametrables.clear()
 
