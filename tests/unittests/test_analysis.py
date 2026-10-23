@@ -202,8 +202,8 @@ class TestDataAnalysis(tu.UpdatableConfigTest):
 
         # Check that readers are assigned
         self.assertEqual(len(analysis.readers), 2)
-        self.assertTrue(analysis.has_reader(readers[0]))
-        self.assertTrue(analysis.has_reader(readers[1]))
+        self.assertTrue(analysis.has_reader_dep(readers[0]))
+        self.assertTrue(analysis.has_reader_dep(readers[1]))
 
     def test_data_analysis_set_readers_missing_reader(self):
         """Test that set_readers raises RuntimeError when a reader is missing."""

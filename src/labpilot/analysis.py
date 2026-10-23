@@ -413,7 +413,7 @@ class DataAnalysis(GUIParametrable):
             if not found:
                 raise RuntimeError(f"Not found {prop} in {readers}")
 
-    def has_reader(self, reader: dr.LiveDataReader) -> bool:
+    def has_reader_dep(self, reader: dr.LiveDataReader) -> bool:
         """
         Returns a boolean indicating whether the given reader is a dependency of the current `DataAnalysis`.
 
@@ -837,7 +837,7 @@ class View(GUIParametrable, tools.IgnorableClass):
             >>> assert not view.has_reader(invalid_reader)
         """
         for analysis in self.analysis:
-            if analysis.has_reader(reader):
+            if analysis.has_reader_dep(reader):
                 return True
         return False
 

@@ -132,6 +132,35 @@ class TestMeasurementAnalysis(MeasurementProcedure):
         return analysis
 
 
+class TestMeasurementAnalysisNoReference(MeasurementProcedure):
+    """Test subclass with a fixed measurement file name."""
+
+    name: str = "Test Data Measurement"
+    title: str = "Test Title"
+    dirname: str = "test_data_file"
+
+    def __init__(self, *args, **kwargs):
+        self.dirname = "test_data_file"
+        self.graphs = []
+        super().__init__(*args, **kwargs)
+
+    def execute(self) -> np.ndarray:
+        """Placeholder execute method."""
+        data = np.zeros((2, 5))
+        data[0] = np.arange(5)
+        data[1] = np.arange(5, 10)
+        return data
+
+    def refresh_plots(self):
+        """Placeholder refresh_plots method."""
+        pass
+
+    def get_analysis(self) -> List[ana.DataAnalysis]:
+        analysis: List[ana.DataAnalysis] = [dc.TestAnalysis()]
+
+        return analysis
+
+
 class TestDataMeasurementFolderTest(du.UpdatableConfigTest):
     """Test suite for MeasurementProcedure measurement_data_folder property."""
 
@@ -940,13 +969,18 @@ class TestMeasurementProcedureReaders(du.UpdatableConfigTest):
         meas_analysis = view.analysis[0]
         meas_analysis.set_readers(readers)
         # Check that it is setup correctly
-        self.assertTrue(meas_analysis.has_reader(readers[0]))
+        self.assertTrue(meas_analysis.has_reader_dep(readers[0]))
 
         test_analysis = view.analysis[1]
         test_analysis.set_readers(readers)
         # Check that it is setup correctly
-        self.assertTrue(test_analysis.has_reader(readers[1]))
-        self.assertTrue(test_analysis.has_reader(readers[2]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[1]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[2]))
+
+        # Check that the MeasurementProcedure is setup correctly
+        self.assertTrue(view.has_reader(readers[0]))
+        self.assertTrue(view.has_reader(readers[1]))
+        self.assertTrue(view.has_reader(readers[2]))
 
     def test_set_readers_from_view(self):
         """Test that the analysis are initialized appropriately"""
@@ -966,12 +1000,61 @@ class TestMeasurementProcedureReaders(du.UpdatableConfigTest):
 
         meas_analysis = view.analysis[0]
         # Check that it is setup correctly
-        self.assertTrue(meas_analysis.has_reader(readers[0]))
+        self.assertTrue(meas_analysis.has_reader_dep(readers[0]))
 
         test_analysis = view.analysis[1]
         # Check that it is setup correctly
-        self.assertTrue(test_analysis.has_reader(readers[1]))
-        self.assertTrue(test_analysis.has_reader(readers[2]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[1]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[2]))
+
+        # Check that the MeasurementProcedure is setup correctly
+        self.assertTrue(view.has_reader(readers[0]))
+        self.assertTrue(view.has_reader(readers[1]))
+        self.assertTrue(view.has_reader(readers[2]))
+
+    def test_set_readers_from_analysis_2(self):
+        """Test that the analysis are initialized appropriately"""
+
+        view = TestMeasurementAnalysisNoReference()
+
+        # Check that all readers are gotten
+        readers_types = ana.View.get_all_readers_dependencies([view])
+        readers = [reader() for reader in readers_types]
+
+        self.assertListEqual(readers_types, [dc.TestReader, dc.TestStreamer])
+
+        test_analysis = view.analysis[0]
+        test_analysis.set_readers(readers)
+        # Check that it is setup correctly
+        self.assertTrue(test_analysis.has_reader_dep(readers[0]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[1]))
+
+        # Check that the MeasurementProcedure is setup correctly
+        self.assertTrue(view.has_reader(readers[0]))
+        self.assertTrue(view.has_reader(readers[1]))
+
+    def test_set_readers_from_view_2(self):
+        """Test that the analysis are initialized appropriately"""
+
+        view = TestMeasurementAnalysisNoReference()
+
+        # Check that all readers are gotten
+        readers_types = ana.View.get_all_readers_dependencies([view])
+        readers = [reader() for reader in readers_types]
+
+        self.assertListEqual(readers_types, [dc.TestReader, dc.TestStreamer])
+
+        # Set the readers
+        view.set_readers(readers)
+
+        test_analysis = view.analysis[0]
+        # Check that it is setup correctly
+        self.assertTrue(test_analysis.has_reader_dep(readers[0]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[1]))
+
+        # Check that the MeasurementProcedure is setup correctly
+        self.assertTrue(view.has_reader(readers[0]))
+        self.assertTrue(view.has_reader(readers[1]))
 
 
 if __name__ == "__main__":
