@@ -43,6 +43,8 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     procedure_running: bool = False
     running_procedure: "MeasurementProcedure | None" = None
     running_threadpool: ThreadPoolExecutor | None = None
+    record_all_readers: bool = True
+    """If `True`, all readers will log all the data they collect. If `False`, the readers WON'T log their data at all"""
 
     @Status
     def foldername(self) -> str:
@@ -104,6 +106,14 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
 
             self._current_data = data
 
+    @abstractmethod
+    def refresh_plots(self):
+        # Refresh all plots from all analysis that are NOT this current class!
+        for analysis in self.analysis:
+            if analysis is not self:
+                analysis.refresh_plots()
+        return super().refresh_plots()
+
     def get_parameters(
         self, frame: QWidget, view: ana.View | None
     ) -> List[GUIParameter]:
@@ -144,7 +154,7 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
             self.window.start_updates()
 
         # Update all the recording informations
-        RecordingManager.main().start_recording(self)
+        RecordingManager.main().start_recording(self, self.record_all_readers)
         MeasurementProcedure.procedure_running = True
         MeasurementProcedure.running_procedure = self
         self.execute_stop_event.clear()

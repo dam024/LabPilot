@@ -53,6 +53,7 @@ class RecordingManager:
 
         RecordingManager._main = self
         self.recorder = None
+        self.record_reader_data = True
         self.measurement_id: int | None = None
 
     @property
@@ -78,12 +79,14 @@ class RecordingManager:
 
         return RecordingManager._main
 
-    def start_recording(self, recorder: object) -> RecordingInfos:
+    def start_recording(
+        self, recorder: object, record_reader_data: bool = True
+    ) -> RecordingInfos:
         if self.is_recording:
             raise RMRecordingInProgress(
                 f"{recorder.__class__.__name__} is already recording data. You cannot start a new recording!!!"
             )
-
+        self.record_reader_data = record_reader_data
         self.recorder = recorder
         self._recording = RecordingInfos()
         self._recording["start"] = datetime.datetime.now()

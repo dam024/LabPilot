@@ -318,7 +318,10 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
                 return
 
             # Save all data
-            if rm.RecordingManager.main().is_recording:
+            if (
+                rm.RecordingManager.main().is_recording
+                and rm.RecordingManager.main().record_reader_data
+            ):
                 # self.save_all_arrays = True
                 self.save_data(
                     data,
