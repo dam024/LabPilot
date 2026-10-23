@@ -1,4 +1,5 @@
 import shutil
+import sys
 import unittest
 from pathlib import Path
 import subprocess
@@ -56,18 +57,17 @@ class TestCLI(unittest.TestCase):
 
         # Check that the installation is correct
         result = subprocess.run(
-            ["python", "main.py", "check", "-c", "config.ini"],
+            [sys.executable, "main.py", "check", "-c", "config.ini"],
             cwd=self.project_dir,
             capture_output=True,
             text=True,
         )
-
         self.assertEqual(result.stdout, "")
         self.assertEqual(result.stderr, "")
 
         # Check that the tests are running
         result = subprocess.run(
-            ["python", "main.py", "test"],
+            [sys.executable, "main.py", "test"],
             cwd=self.project_dir,
             capture_output=True,
             text=True,

@@ -277,7 +277,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         np.testing.assert_almost_equal(
             kwargs["item"][1], np.array([[1.0, 2.0], [3.0, 4.0]])
         )
-        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertEqual(expected_path, Path(kwargs["item"][2]))
         self.assertTrue(kwargs["item"][3])
 
     def test_load_file_nonexistent_file(self):
@@ -348,7 +348,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
 
         self.assertEqual(kwargs["item"][0], "s")
         np.testing.assert_almost_equal(kwargs["item"][1], np.array([[1.0, 2.0]]))
-        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertEqual(expected_path, Path(kwargs["item"][2]))
         self.assertFalse(kwargs["item"][3])
 
     def test_save_data_with_custom_subfolder(self):
@@ -365,7 +365,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
 
         self.assertEqual(kwargs["item"][0], "s")
         np.testing.assert_almost_equal(kwargs["item"][1], np.array([[1.0, 2.0]]))
-        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertEqual(expected_path, Path(kwargs["item"][2]))
         self.assertFalse(kwargs["item"][3])
 
     def test_save_data_with_custom_filename(self):
@@ -382,7 +382,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
 
         self.assertEqual(kwargs["item"][0], "s")
         np.testing.assert_almost_equal(kwargs["item"][1], np.array([[1.0, 2.0]]))
-        self.assertEqual(str(expected_path), kwargs["item"][2])
+        self.assertEqual(expected_path, Path(kwargs["item"][2]))
         self.assertFalse(kwargs["item"][3])
 
     def test_save_queue_force_save_behavior(self):

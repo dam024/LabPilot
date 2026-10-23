@@ -1,6 +1,7 @@
 """This file tests that the installation of the package works as expected"""
 import os
 import shutil
+import sys
 import unittest
 from pathlib import Path
 import subprocess
