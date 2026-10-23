@@ -180,7 +180,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
                 to=100.0,
                 value=self.refresh_delay,
                 text="Delay between samples [s]:",
-                increment=0.1,
+                increment=0.01,
             )
 
             l.append(params.GUIParameter(slider_delay))

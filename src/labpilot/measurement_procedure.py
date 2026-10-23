@@ -89,6 +89,9 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     def set_readers(self, readers: List[dr.LiveDataReader]):
         # This method needs to be overriden, because it has an hybrid behavior between DataAnalysis and View. Otherwise, it will use the one from DataAnalysis, which is wrong in general...
         ana.View.set_readers(self, readers)
+        ana.DataAnalysis.set_readers(
+            self, readers
+        )  # In case it is not in the analysis...
 
     def load_plot_data(self):
         super().load_plot_data()
