@@ -109,6 +109,14 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
 
             self._current_data = data
 
+    # @abstractmethod
+    def refresh_plots(self):
+        # Refresh all plots from all analysis that are NOT this current class!
+        for analysis in self.analysis:
+            if analysis is not self:
+                analysis.refresh_plots()
+        return super().refresh_plots()
+
     def get_analysis(self) -> List[ana.DataAnalysis]:
         l = super().get_analysis()
         l.append(self)
