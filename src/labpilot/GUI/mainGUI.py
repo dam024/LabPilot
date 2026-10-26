@@ -26,6 +26,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from labpilot.GUI.parameters import GUIParametrable
 from labpilot._logging import ConsoleLogger
 import labpilot.analysis as ana
 import labpilot.MainLoopHandler as mainLoop
@@ -231,8 +232,10 @@ class MainWindow(QMainWindow, BindingSupport):
     def reset_plots_parametrables(self):
         self.plots = []
 
-        self.default_parametrables = [
+    def get_default_parametrables(self, view: ana.View) -> List[GUIParametrable]:
+        return [
             internal_params.ApplicationParameters(
+                associated_view=view,
                 update_interval=self.update_interval,
                 active_view=self.active_view_name,
                 is_experiment_running=self.is_experiment_running,
@@ -349,7 +352,9 @@ class MainWindow(QMainWindow, BindingSupport):
             frame_layout.setContentsMargins(0, 0, 0, 0)
             frame.setLayout(frame_layout)
 
-            for param in self.default_parametrables + view.get_parametrables():
+            for param in (
+                self.get_default_parametrables(view) + view.get_parametrables()
+            ):
                 param.set_window(window=self)
                 widget = param.create_widget(frame=frame, view=view)
 

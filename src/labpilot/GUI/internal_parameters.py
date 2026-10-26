@@ -30,6 +30,7 @@ class ApplicationParameters(GUIParametrable):
 
     def __init__(
         self,
+        associated_view: View,
         update_interval: CBinding[int],
         active_view: CBinding[str],
         is_experiment_running: CBinding[bool],
@@ -38,8 +39,15 @@ class ApplicationParameters(GUIParametrable):
         """
         This is a special class.
         NEVER add additional constructor parameters.
-        """
 
+        Args:
+            associated_view (View): View to which these parameters are associated to
+            update_interval (CBinding[int]): Binding that controls the plot update time interval
+            active_view (CBinding[str]): Binding that controls which view is active
+            is_experiment_running (CBinding[bool]): Binding that controls if an experiment is running
+            experiment_button_text (CBinding[str]): Binding that controls the text of the experiment toggling button
+        """
+        self.associated_view = associated_view
         self.update_interval = update_interval
         self.active_view = active_view
         self.is_experiment_running = is_experiment_running
@@ -84,7 +92,9 @@ class ApplicationParameters(GUIParametrable):
             GUIParameter(self.button_toggle_experiment),
         ]
 
-        if not config.simulation:
+        if not config.simulation and not isinstance(
+            self.associated_view, mp.MeasurementProcedure
+        ):
             self.button_recording = objects.ButtonWidget(
                 frame,
                 text=self.recording_button_text,
