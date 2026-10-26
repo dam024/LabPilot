@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 from labpilot import config
 import labpilot.DataReceiver as dr
 import labpilot.analysis as ana
-from labpilot.GUI.parameters import GUIParameter
+from labpilot.GUI.parameters import GUIParameter, GUIParametrable
 import labpilot.GUI.objects as gui_obj
 from labpilot.recording_manager import RecordingManager
 from labpilot.utils import concurrently
@@ -91,9 +91,12 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     def set_readers(self, readers: List[dr.LiveDataReader]):
         # This method needs to be overriden, because it has an hybrid behavior between DataAnalysis and View. Otherwise, it will use the one from DataAnalysis, which is wrong in general...
         ana.View.set_readers(self, readers)
-        ana.DataAnalysis.set_readers(
-            self, readers
-        )  # In case it is not in the analysis...
+
+    def load_components(self):
+        super().load_components()
+        # Ensures that `self` is in `self.analysis`
+        if self not in self.analysis:
+            self.analysis.insert(0, self)
 
     def load_plot_data(self):
         super().load_plot_data()
@@ -106,19 +109,19 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
 
             self._current_data = data
 
-    @abstractmethod
-    def refresh_plots(self):
-        # Refresh all plots from all analysis that are NOT this current class!
-        for analysis in self.analysis:
-            if analysis is not self:
-                analysis.refresh_plots()
-        return super().refresh_plots()
+    def get_analysis(self) -> List[ana.DataAnalysis]:
+        l = super().get_analysis()
+        l.append(self)
+        return l
 
     def get_parameters(
         self, frame: QWidget, view: ana.View | None
     ) -> List[GUIParameter]:
         self.find_free_foldername()
-        parameters = super().get_parameters(frame, view)
+
+        parameters = ana.DataAnalysis.get_parameters(self, frame, view)
+        parameters += ana.View.get_parameters(self, frame, view)
+
         parameters.append(
             GUIParameter(
                 widget=gui_obj.Entry(frame, label="Folder name:", text=self.foldername)
@@ -140,6 +143,21 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
         )
 
         return parameters
+
+    def get_parametrables_deprecated(self) -> List[GUIParametrable]:
+        parametrables = super().get_parametrables()
+
+        if self not in parametrables:
+            # Add its readers and plots
+            parametrables.insert(0, self)
+            parametrables += self.readers
+            parametrables += [
+                graph
+                for graph in self.graphs
+                if graph.show and isinstance(graph, GUIParametrable)
+            ]
+
+        return parametrables
 
     def execute_procedure(self):
         """Reinitialize all the plots and execute the procedure"""

@@ -344,7 +344,6 @@ class DataAnalysis(GUIParametrable):
         self._check_for_property("graphs")
         self._make_attribute_instance("graphs", [])
         super().__init__()
-        return
 
     def _add_readers_dependencies(
         self, existing_readers: List[Type[dr.LiveDataReader]]
@@ -679,11 +678,13 @@ class View(GUIParametrable, tools.IgnorableClass):
         """Returns the different analysis required for the current View
 
         Note:
-            This method is responsible for creating the different analysis
+            - This method is responsible for creating the different analysis
+            - The order of the analysis you return is the same as the order they will be displayed in the interface
 
         Important:
             The data readers are NOT accessible from this method. They are added later
         """
+        return []
 
     @property
     def all_graphs(self) -> List[plots.GraphSet]:
@@ -740,6 +741,7 @@ class View(GUIParametrable, tools.IgnorableClass):
 
         Note:
             Each instance must exist only once per array.
+            The output array is first filled with the DataAnalysis, then the Readers and at the very end the plots
 
         Returns:
             List[GUIParametrable]: List of parametrables including the view,
@@ -756,14 +758,22 @@ class View(GUIParametrable, tools.IgnorableClass):
         ):
             l.append(self)
 
+        # Add the analysis
         for analysis in self.analysis:
             l.append(analysis)
+
+        # Add the readers
+        for analysis in self.analysis:
             l += analysis.readers
+
+        # Add the plots
+        for analysis in self.analysis:
             l += [
                 graph
                 for graph in analysis.graphs
                 if graph.show and isinstance(graph, GUIParametrable)
             ]
+
         return l
 
     def load_components(self):

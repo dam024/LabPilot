@@ -25,7 +25,7 @@ import json
 
 from labpilot import config
 from labpilot.GUI.binding import BindingSupport
-from labpilot.GUI.objects import ButtonWidget
+from labpilot.GUI.objects import ButtonWidget, Entry
 import tests.dummy_classes as dc
 from tests.dummy_classes import TestStreamSubclass
 import tests.utils as du
@@ -64,11 +64,6 @@ class TestDataMeasurementFolder(MeasurementProcedure):
         """Placeholder refresh_plots method."""
         pass
 
-    def get_analysis(self) -> List[ana.DataAnalysis]:
-        analysis: List[ana.DataAnalysis] = [self]
-
-        return analysis
-
 
 class TestDataMeasurementFile(MeasurementProcedure):
     """Test subclass with a fixed measurement file name."""
@@ -92,11 +87,6 @@ class TestDataMeasurementFile(MeasurementProcedure):
     def refresh_plots(self):
         """Placeholder refresh_plots method."""
         pass
-
-    def get_analysis(self) -> List[ana.DataAnalysis]:
-        analysis: List[ana.DataAnalysis] = [self]
-
-        return analysis
 
 
 class TestMeasurementAnalysis(MeasurementProcedure):
@@ -127,7 +117,9 @@ class TestMeasurementAnalysis(MeasurementProcedure):
         pass
 
     def get_analysis(self) -> List[ana.DataAnalysis]:
-        analysis: List[ana.DataAnalysis] = [self, dc.TestAnalysis()]
+        analysis: List[ana.DataAnalysis] = super().get_analysis()
+
+        analysis.append(dc.TestAnalysis())
 
         return analysis
 
@@ -143,6 +135,10 @@ class TestMeasurementAnalysisNoReference(MeasurementProcedure):
         self.dirname = "test_data_file"
         self.graphs = []
         super().__init__(*args, **kwargs)
+
+    @ana.reader
+    def test_streamer_subclass(self) -> TestStreamSubclass:
+        ...
 
     def execute(self) -> np.ndarray:
         """Placeholder execute method."""
@@ -523,6 +519,8 @@ class TestMeasurementProcedureGetParameters(du.UpdatableConfigTest):
         # Create a mock frame widget
 
         frame = QWidget()
+        # Setup Qt
+        self.procedure.setup_qt_events(frame)
 
         params = self.procedure.get_parameters(frame, None)
 
@@ -532,18 +530,64 @@ class TestMeasurementProcedureGetParameters(du.UpdatableConfigTest):
         """Test that get_parameters includes a button widget for the procedure."""
 
         frame = QWidget()
+        # Setup Qt
+        self.procedure.setup_qt_events(frame)
         params = self.procedure.get_parameters(frame, None)
 
         # Check that at least one parameter is returned
         self.assertGreater(len(params), 0)
 
         # The first parameter should be a button widget with the title
-        if len(params) > 0:
-            self.assertIsInstance(params[0].widget, ButtonWidget)
+        if len(params) > 2:
+            self.assertIsInstance(params[2].widget, ButtonWidget)
             self.assertEqual(
-                getattr(params[0].widget.get_widget(), "text")(),
+                getattr(params[2].widget.get_widget(), "text")(),
                 self.procedure.title,
             )
+
+    def test_get_parametrable_in_list(self):
+        """Test that the get_parametrables returns the correct amount of parametrables"""
+        procedure = TestMeasurementAnalysis()
+
+        # Needs to setup the readers...
+        readers = [
+            reader() for reader in ana.View.get_all_readers_dependencies([procedure])
+        ]
+        procedure.set_readers(readers)
+
+        self.assertListEqual(
+            [t.__class__ for t in procedure.get_parametrables()],
+            [
+                procedure.__class__,
+                dc.TestAnalysis,
+                dc.TestStreamSubclass,
+                dc.TestReader,
+                dc.TestStreamer,
+            ],
+        )
+
+    def test_get_parametrable_not_in_list(self):
+        """Test that the get_parametrables returns the correct amount of parametrables"""
+        procedure = TestMeasurementAnalysisNoReference()
+
+        self.assertIn(procedure, procedure.analysis)
+
+        # Needs to setup the readers...
+        readers = [
+            reader() for reader in ana.View.get_all_readers_dependencies([procedure])
+        ]
+        procedure.set_readers(readers)
+
+        self.assertListEqual(
+            [t.__class__ for t in procedure.get_parametrables()],
+            [
+                procedure.__class__,
+                dc.TestAnalysis,
+                dc.TestStreamSubclass,
+                dc.TestReader,
+                dc.TestStreamer,
+            ],
+        )
 
 
 class TestMeasurementProcedureExecuteProcedure(du.UpdatableConfigTest):
@@ -1017,17 +1061,29 @@ class TestMeasurementProcedureReaders(du.UpdatableConfigTest):
 
         view = TestMeasurementAnalysisNoReference()
 
+        self.assertIn(view, view.analysis)
+
         # Check that all readers are gotten
         readers_types = ana.View.get_all_readers_dependencies([view])
         readers = [reader() for reader in readers_types]
 
-        self.assertListEqual(readers_types, [dc.TestReader, dc.TestStreamer])
+        self.assertListEqual(
+            readers_types, [dc.TestStreamSubclass, dc.TestReader, dc.TestStreamer]
+        )
 
-        test_analysis = view.analysis[0]
+        procedure_analysis = view.analysis[0]
+        procedure_analysis.set_readers(readers)
+        # Check that it is setup correctly
+        self.assertTrue(procedure_analysis.has_reader_dep(readers[0]))
+        self.assertFalse(procedure_analysis.has_reader_dep(readers[1]))
+        self.assertFalse(procedure_analysis.has_reader_dep(readers[2]))
+
+        test_analysis = view.analysis[1]
         test_analysis.set_readers(readers)
         # Check that it is setup correctly
-        self.assertTrue(test_analysis.has_reader_dep(readers[0]))
+        self.assertFalse(test_analysis.has_reader_dep(readers[0]))
         self.assertTrue(test_analysis.has_reader_dep(readers[1]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[2]))
 
         # Check that the MeasurementProcedure is setup correctly
         self.assertTrue(view.has_reader(readers[0]))
@@ -1038,19 +1094,30 @@ class TestMeasurementProcedureReaders(du.UpdatableConfigTest):
 
         view = TestMeasurementAnalysisNoReference()
 
+        self.assertIn(view, view.analysis)
+
         # Check that all readers are gotten
         readers_types = ana.View.get_all_readers_dependencies([view])
         readers = [reader() for reader in readers_types]
 
-        self.assertListEqual(readers_types, [dc.TestReader, dc.TestStreamer])
+        self.assertListEqual(
+            readers_types, [dc.TestStreamSubclass, dc.TestReader, dc.TestStreamer]
+        )
 
         # Set the readers
         view.set_readers(readers)
 
-        test_analysis = view.analysis[0]
+        procedure_analysis = view.analysis[0]
         # Check that it is setup correctly
-        self.assertTrue(test_analysis.has_reader_dep(readers[0]))
+        self.assertTrue(procedure_analysis.has_reader_dep(readers[0]))
+        self.assertFalse(procedure_analysis.has_reader_dep(readers[1]))
+        self.assertFalse(procedure_analysis.has_reader_dep(readers[2]))
+
+        test_analysis = view.analysis[1]
+        # Check that it is setup correctly
+        self.assertFalse(test_analysis.has_reader_dep(readers[0]))
         self.assertTrue(test_analysis.has_reader_dep(readers[1]))
+        self.assertTrue(test_analysis.has_reader_dep(readers[2]))
 
         # Check that the MeasurementProcedure is setup correctly
         self.assertTrue(view.has_reader(readers[0]))
