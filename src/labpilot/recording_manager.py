@@ -2,7 +2,7 @@ from __future__ import annotations
 import datetime
 import os
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Self
 
 from PySide6.QtWidgets import QInputDialog
 
@@ -15,15 +15,10 @@ from labpilot import config
 from labpilot.data_management.database_manager import DB
 from labpilot.data_management.datamodel import Recording
 from labpilot.data_management.measurement_information import RecordingInfos
+import labpilot._tools.utility_classes as uc
 
 if TYPE_CHECKING:
     from labpilot.GUI.mainGUI import MainWindow
-
-
-class RMInstantiationException(Exception):
-    """Error to indicate that only a single instance of the recording manager can be instantiated"""
-
-    pass
 
 
 class RMRecordingInProgress(Exception):
@@ -38,23 +33,17 @@ class RMNoRecording(Exception):
     pass
 
 
-class RecordingManager:
+class RecordingManager(uc.GlobalUniqueInstance):
     _recording_subfolder: str = "recording"
     reading_recording_subfolder: str | None = None
     """When the application is in simulation mode, indicates the path to the current recording folder. This is not used when the application is NOT in simulation mode"""
     stream_values: bool = True
-    _main: "RecordingManager | None" = None
 
     def __init__(self) -> None:
-        if RecordingManager._main is not None:
-            raise RMInstantiationException(
-                "You can only instantiate ONCE the recording manager! Please, use `RecordingManager.main()` to access it!!!"
-            )
-
-        RecordingManager._main = self
         self.recorder = None
         self.record_reader_data = True
         self.measurement_id: int | None = None
+        super().__init__()
 
     @property
     def is_recording(self) -> bool:
@@ -71,13 +60,6 @@ class RecordingManager:
         """Returns the path to the folder where the current recordings are"""
         path = os.path.join(config.output_dir_data, self.recording_subfolder)
         return path
-
-    @classmethod
-    def main(cls) -> "RecordingManager":
-        if RecordingManager._main is None:
-            RecordingManager._main = RecordingManager()
-
-        return RecordingManager._main
 
     def start_recording(
         self, recorder: object, record_reader_data: bool = True

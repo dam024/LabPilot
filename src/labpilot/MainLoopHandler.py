@@ -20,11 +20,13 @@ import labpilot.analysis as ana
 import labpilot.measurement_procedure as mp
 from labpilot import config, globalState
 import labpilot._tools.dynamic_imports as tools
+import labpilot._tools.utility_classes as uc
 
 
 class AppHandler(ABC):
     ## Indicates if the threads must be started automatically
     auto_start_threads: bool = False
+    exclude_ignored_views: bool = True
 
     def __init__(self) -> None:
         super().__init__()
@@ -38,7 +40,7 @@ class AppHandler(ABC):
             module_location=config.get("GENERAL", "extra_code"),
             cls_type=ana.View,
             excluded_modules=["labpilot.DataReceiver"],
-            exclude_ignored=True,
+            exclude_ignored=self.exclude_ignored_views,
         )
         # self.views = list(filter(lambda reader: (not reader.ignore), self.views))
         # Recover active view
@@ -246,7 +248,6 @@ class PlotsGUIMainLoop(MainLoop):
 
 class PlotGeneration(AppHandler):
     auto_start_threads = False
-    control_plots_animation = False
 
     def start_threads(self):
         """We do not start the threads..."""
@@ -301,3 +302,31 @@ class PlotGeneration(AppHandler):
                         plot.save(output_folder)
 
         return super().launch_main_thread()
+
+
+class ViewNotFoundError(Exception):
+    pass
+
+
+class ScriptingLoopHandler(AppHandler, uc.GlobalUniqueInstance):
+    auto_start_threads = False
+    exclude_ignored_views = False  # Take ignored views in the list
+
+    def start_threads(self):
+        # We don't need the threads in this mode
+        pass
+
+    def launch_main_thread(self):
+        # Loads the plots with matplotlib
+        for view in self.views:
+            for plot in view.all_graphs:
+                plot.init_plots()
+
+    def get_view[T: ana.View](self, type: Type[T]) -> T:
+        for view in self.views:
+            if isinstance(view, type):
+                return view
+
+        raise ViewNotFoundError(
+            f"The view of type {type.__name__} has not been registered! "
+        )

@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Type
 import json
+from labpilot.analysis import View
 import tqdm
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -11,7 +12,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from labpilot import config
 from labpilot.data_management.measurement_information import RecordingInfos
+from labpilot.MainLoopHandler import ScriptingLoopHandler
 
 
 def list_recording_folders(base_path: str | Path) -> List[Path]:
@@ -135,3 +138,17 @@ def read_data(
             file.unlink()
 
     return data
+
+
+def begin_scripting_with(config_path: str | Path):
+    # Load the configuration
+    config.read(config_path)
+    config.simulation = True
+    config.use_gui = False
+
+    # Begin the loop
+    ScriptingLoopHandler.main().start()
+
+
+def get_view[T: View](type: Type[T]) -> T:
+    return ScriptingLoopHandler.main().get_view(type)

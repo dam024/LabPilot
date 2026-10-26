@@ -10,6 +10,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import labpilot._tools.utility_classes as uc
+
 
 def is_save_action(
     tpl: Tuple[str, np.ndarray, str, bool] | Tuple[str, str, str]
@@ -25,28 +27,16 @@ def is_move_action(
     return tpl[0] == "mv"
 
 
-class BackgroundSaveThread:
+class BackgroundSaveThread(uc.GlobalUniqueInstance):
     save_queue = queue.Queue[Tuple[str, np.ndarray, str, bool] | Tuple[str, str, str]]()
 
-    _main: "BackgroundSaveThread | None" = None
-
     def __init__(self) -> None:
-        if BackgroundSaveThread._main is not None:
-            raise RuntimeError(
-                "You can only instantiate ONCE the background save thread! Please, use `BackgroundSaveThread.main()` to access it!!!"
-            )
         self.global_thread: threading.Thread | None = None
         self.global_thread_stop_event = threading.Event()
         BackgroundSaveThread.save_queue = queue.Queue[
             Tuple[str, np.ndarray, str, bool] | Tuple[str, str, str]
         ]()
-
-    @classmethod
-    def main(cls) -> "BackgroundSaveThread":
-        if BackgroundSaveThread._main is None:
-            BackgroundSaveThread._main = BackgroundSaveThread()
-
-        return BackgroundSaveThread._main
+        super().__init__()
 
     @property
     def is_running(self) -> bool:
