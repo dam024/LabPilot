@@ -71,10 +71,7 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
             config.simulation
             and recording_manager.reading_recording_subfolder is not None
         ):
-            folder = os.path.join(
-                config.output_dir_data,
-                recording_manager.reading_recording_subfolder,
-            )
+            folder = recording_manager.reading_recording_subfolder
         else:
             # folder = os.path.join(config.output_dir_data, self.dirname)
             folder = RecordingManager.main().recording_path

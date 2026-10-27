@@ -29,6 +29,8 @@ class MatplotlibBackend(pb.PlotBackend[Figure, Axes]):
         self.ax_right: Axes | None = None
         self.lines: List[Line2D] = []
         self.texts: List[Text] = []
+
+        self.use_legends = False
         super().__init__()
 
     def get_figure(self) -> Figure:
@@ -66,6 +68,7 @@ class MatplotlibBackend(pb.PlotBackend[Figure, Axes]):
             x, y, label=label, marker=marker, color=color, linestyle=linestyle, lw=lw
         )[0]
         self.lines.append(l)
+        self.update_legend()
 
         return pb.Line(self, index=idx)
 
@@ -83,6 +86,7 @@ class MatplotlibBackend(pb.PlotBackend[Figure, Axes]):
         l = ax.axhline(y, label=label, color=color, linestyle=linestyle, lw=lw)
         idx = len(self.lines)
         self.lines.append(l)
+        self.update_legend()
         return pb.Line(self, idx)
 
     def set_data(self, line: pb.Line, x: npt.NDArray, y: npt.NDArray):
@@ -173,7 +177,23 @@ class MatplotlibBackend(pb.PlotBackend[Figure, Axes]):
         ax.grid(visible=visible, axis=axis, which=which)
 
     def legend(self):
-        self.ax.legend()
+        self.use_legends = True
+        self.update_legend()
+
+    def update_legend(self):
+        if not self.use_legends:
+            return
+        handles_left, labels_left = self.ax.get_legend_handles_labels()
+        if self.ax_right is not None:
+            handles_right, labels_right = self.ax_right.get_legend_handles_labels()
+        else:
+            handles_right = []
+            labels_right = []
+
+        self.ax.legend(
+            handles_left + handles_right,
+            labels_left + labels_right,
+        )
 
     ###### Plots properties
     def set_auto_axis(self):

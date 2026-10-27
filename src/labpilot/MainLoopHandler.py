@@ -5,6 +5,7 @@ from threading import Event, Thread
 import time
 from typing import Dict, List, Tuple, Type, TypeGuard
 from pathlib import Path
+from labpilot.recording_manager import RecordingManager
 import numpy as np
 import threading
 import os
@@ -30,6 +31,11 @@ class AppHandler(ABC):
 
     def __init__(self) -> None:
         super().__init__()
+
+    @property
+    def has_readers_running(self) -> bool:
+        """Returns `True` if at least ONE reader is running"""
+        return len([reader for reader in self.readers if reader.is_running]) > 0
 
     def start(self):
         """Start the main loop for the program"""
@@ -113,7 +119,10 @@ class MainLoop(AppHandler):
         Note: The data for unused readers are not cleared! So if a reader already has data, they won't be loaded!
         """
 
-        if config.simulation:
+        if (
+            config.simulation
+            and RecordingManager.reading_recording_subfolder is not None
+        ):
             self.active_view.load_plot_data()
             self.active_view.refresh_plots()
 

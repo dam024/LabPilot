@@ -62,7 +62,7 @@ class GeneralConfig(configparser.ConfigParser):
 
 
 class GlobalState:
-    stream_values: bool = True
+    stream_values: bool = False
 
 
 generalConfig = GeneralConfig()

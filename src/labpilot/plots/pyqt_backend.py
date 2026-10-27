@@ -33,6 +33,7 @@ class _LineEntry:
     item: object
     right_axis: bool
     is_horizontal: bool
+    label: str | None
 
 
 class _AxesText:
@@ -116,6 +117,7 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
         self.ax.hideButtons()  # Hide the buttons that allow the user to reset the plot scale
         self.ax.getViewBox().disableAutoRange()
         self.ax.layout.setContentsMargins(5, 5, 50, 5)
+        self.legend_left: pg.LegendItem | None = None
 
         self.ax_right: ViewBox | None = None
 
@@ -423,14 +425,15 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
         if right_axis:
             axis = self._get_axis(right_axis=True)
             axis.addItem(curve)
+
+            if self.legend_left is not None and label is not None:
+                self.legend_left.addItem(curve, label)
         else:
             self.ax.addItem(curve)
 
         self.lines.append(
             _LineEntry(
-                item=curve,
-                right_axis=right_axis,
-                is_horizontal=False,
+                item=curve, right_axis=right_axis, is_horizontal=False, label=label
             )
         )
 
@@ -459,6 +462,9 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
         if right_axis:
             axis = self._get_axis(right_axis=True)
             axis.addItem(line)
+
+            if self.legend_left is not None and label is not None:
+                self.legend_left.addItem(line, label)
         else:
             self.ax.addItem(line)
 
@@ -466,9 +472,7 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
 
         self.lines.append(
             _LineEntry(
-                item=line,
-                right_axis=right_axis,
-                is_horizontal=True,
+                item=line, right_axis=right_axis, is_horizontal=True, label=label
             )
         )
 
@@ -672,7 +676,16 @@ class PyQtBackend(pb.PlotBackend[pg.PlotWidget, PlotItem]):
         )
 
     def legend(self):
-        self.ax.addLegend()
+        self.legend_left = self.ax.addLegend()
+
+        # Add the items that have not yet been added
+        for line in self.lines:
+            if line.label is not None:
+                self.legend_left.addItem(line.item, line.label)
+
+    #
+    # else:
+    #    self.legend_left.addItem(line.item, line.label)
 
     ###### Plots properties
 

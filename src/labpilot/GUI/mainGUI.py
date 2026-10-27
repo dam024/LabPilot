@@ -425,10 +425,11 @@ class MainWindow(QMainWindow, BindingSupport):
     # --------------------------------------------------
     def update_all_plots(self):
         try:
-            self.active_view.refresh_plots()
+            if not config.simulation or self.mainGuiLoop.has_readers_running:
+                self.active_view.refresh_plots()
 
-            for plot in self.plots:
-                plot.update_plot()
+                for plot in self.plots:
+                    plot.update_plot()
 
         except Exception as e:
             print(e)
@@ -495,7 +496,7 @@ class MainWindow(QMainWindow, BindingSupport):
 
         self.mainGuiLoop.clear_readers_data()
 
-        self.mainGuiLoop.reload_readers_data()
+        self.clear_all_plots()
 
         # Load the parameters
         infos = RecordingInfos()
@@ -504,6 +505,8 @@ class MainWindow(QMainWindow, BindingSupport):
             new_path,
             apply_parameters=True,
         )
+
+        self.mainGuiLoop.reload_readers_data()
 
     # --------------------------------------------------
     # Menu
