@@ -1,7 +1,9 @@
 from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMessageBox, QWidget
+from labpilot.utils import threadSafe
 import numpy as np
 
 import os
@@ -488,6 +490,33 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
 
         label = QLabel(self.name)
         layout.addWidget(label, 1)  # Takes remaining horizontal space
+
+        reader = self
+
+        class ClickFilter(QObject):
+            def eventFilter(self, obj, event):
+                if event.type() == QEvent.Type.MouseButtonPress:
+                    if event.button() == Qt.MouseButton.LeftButton:
+                        self.ask_question()
+
+                return False
+
+            @threadSafe
+            def ask_question(self):
+                message = (
+                    f"Are you sure you want to turn OFF {reader.name}?"
+                    if reader.is_running
+                    else f"Are you sure you wanto to turn ON {reader.name}?"
+                )
+                button = QMessageBox.question(None, f"{reader.name} toggle", message)
+                if button == QMessageBox.StandardButton.Yes:
+                    if reader.is_running:
+                        reader.pause()
+                    else:
+                        reader.start()
+
+        click_filter = ClickFilter(frame)
+        frame.installEventFilter(click_filter)
 
         return frame
 
