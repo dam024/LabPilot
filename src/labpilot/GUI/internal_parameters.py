@@ -173,7 +173,7 @@ class StatusInterface(GUIParametrable):
     title = "Status"
 
     @Status
-    # @SimulationSavedBinding -> to save the value from session to session
+    # @SimulationSavedBinding  # -> to save the value from session to session
     def recording(self) -> str | None:
         return None
 
@@ -194,7 +194,7 @@ class StatusInterface(GUIParametrable):
         """This variable indicates if the data from `StreamDataReaders` must be streamed during simulation mode.
 
         If data are not streamed, the full plot is shown"""
-        return True
+        return False
 
     @stream_values.onchange
     def __stream_values(self, value: bool):

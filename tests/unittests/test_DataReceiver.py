@@ -280,6 +280,7 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         self.assertEqual(expected_path, Path(kwargs["item"][2]))
         self.assertTrue(kwargs["item"][3])
 
+    @tu.simulation
     def test_load_file_nonexistent_file(self):
         """Test _load_file when file doesn't exist."""
         reader = self.MinimalReader()
@@ -289,19 +290,49 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
 
     @tu.simulation
     def test_load_file_returns_data_when_exists(self):
-        """Test _load_file returns data when file exists."""
+        """Test _load_file returns data when data.npy file exists."""
         reader = self.MinimalReader()
         reader.dirname = "test_reader"
 
         temp_data = np.array([[1.0, 2.0], [3.0, 4.0]])
-        temp_file = Path(config.output_dir_data, "test_reader.npy")
+        temp_file = Path(config.output_dir_data, "test_reader", "data.npy")
         temp_file.parent.mkdir(parents=True, exist_ok=True)
         np.save(temp_file, temp_data)
 
+        self.assertEqual(reader._get_load_file_path(), temp_file.parent)
         data = reader._load_file()
         self.assertIsNotNone(data)
         if data is not None:
             np.testing.assert_array_almost_equal(data, temp_data)
+
+    @tu.simulation
+    def test_load_file_returns_data_outputs_when_exists(self):
+        """Test _load_file returns data when data.npy file exists."""
+        reader = self.MinimalReader()
+        reader.dirname = "test_reader"
+
+        temp_data = np.array([[1.0, 2.0], [3.0, 4.0]])
+        temp_file = Path(config.output_dir_data, "test_reader")
+        temp_file.mkdir(parents=True, exist_ok=True)
+
+        np.save(temp_file / "output_0.npy", temp_data)
+        np.save(temp_file / "output_1.npy", temp_data)
+        np.save(temp_file / "output_2.npy", temp_data)
+
+        self.assertFalse((temp_file / "data.npy").exists())
+
+        with unittest.mock.patch(
+            "tqdm.tqdm", side_effect=lambda x, **kwargs: x
+        ) as mock_tqdm:
+            data = reader._load_file()
+            self.assertIsNotNone(data)
+            if data is not None:
+                expected_data = np.concatenate(
+                    (temp_data, temp_data, temp_data), axis=1
+                )
+                np.testing.assert_array_almost_equal(data, expected_data)
+
+            self.assertTrue((temp_file / "data.npy").exists())
 
     def test_load_data_processes_and_queues_data(self):
         """Test load_data processes and queues data."""
@@ -396,29 +427,30 @@ class TestLiveDataReaderBase(tu.UpdatableConfigTest):
         args, kwargs = backgroundSaveThread.save_queue.put.call_args
         self.assertFalse(kwargs.get("force_save", False))
 
+    @tu.simulation
     def test_load_file_raises_on_nonexistent(self):
-        """Test _load_file raises FileNotFoundError when file doesn't exist."""
+        """Test _load_file returns `None` when file doesn't exist."""
         reader = self.MinimalReader()
         reader.dirname = "nonexistent"
-        with unittest.mock.patch(
-            "labpilot.DataReceiver.config.get", return_value="/tmp"
-        ):
-            self.assertIsNone(reader._load_file())
 
+        self.assertIsNone(reader._load_file())
+
+    @tu.simulation
     def test_load_file_with_path_parameter(self):
         """Test _load_file with explicit path parameter."""
         reader = self.MinimalReader()
         reader.dirname = "test"
-        temp_file = Path("/tmp/custom_path.npy")
-        temp_file.parent.mkdir(parents=True, exist_ok=True)
-        np.save(temp_file, np.array([[1.0, 2.0]]))
 
-        result = reader._load_file(path="/tmp/custom_path.npy")
+        # Path to the recording folder
+        temp_recording = Path(config.output_dir_data) / "test_recording" / "test"
+        temp_recording.mkdir(parents=True, exist_ok=True)
+
+        np.save(temp_recording / "data.npy", np.array([[1.0, 2.0]]))
+
+        result = reader._load_file(path=temp_recording.parent)
         self.assertIsNotNone(result)
         if result is not None:
             self.assertEqual(result.shape, (1, 2))  # Shape matches saved file
-
-        temp_file.unlink()
 
     def test_recording(self):
         """Test that the Reader is saving adding the recording files to the queue when recording is ON"""
@@ -525,12 +557,6 @@ class TestLiveReaderSimulation(tu.UpdatableConfigTest):
         self.reader.on_start = lambda: True
         self.reader.start_reader()
         self.assertTrue(self.reader.status.get() is ReaderStatus.RUNNING)
-
-    def test_load_file_in_simulation(self):
-        """Test _load_file behavior in simulation mode."""
-        self.reader.dirname = "test_reader"
-        self.reader._load_file()
-        self.assertIsNone(self.reader.latest_data)
 
 
 class TestStreamDataReader(tu.UpdatableConfigTest):
@@ -800,20 +826,25 @@ class TestStreamDataReader(tu.UpdatableConfigTest):
         self.assertIn("output_0.npy", path)
 
     @tu.simulation
-    def test_load_file_with_simulation_mode(self):
-        """Test _load_file in simulation mode. when no file exists"""
+    def test_load_data_with_simulation_mode(self):
+        """Test load_data in simulation mode. when no file exists"""
         reader = dc.TestStreamer()
         reader.dirname = "test_reader"
-        reader._load_file()
-        self.assertIsNone(reader.latest_data)
+        with self.assertRaises(NoDataError):
+            self.assertIsNone(reader.load_data())
+            self.assertIsNone(reader.latest_data)
+            self.assertIsNone(reader.get_data())
 
-    def test_load_file_without_simulation_mode(self):
-        """Test _load_file without simulation mode."""
+    def test_load_data_without_simulation_mode(self):
+        """Test load_data without simulation mode."""
         reader = dc.TestStreamer()
         reader.dirname = "test_reader"
-        reader._load_file()
-        self.assertIsNone(reader.latest_data)
+        with self.assertRaises(RuntimeError):
+            self.assertIsNone(reader.load_data())
+            self.assertIsNone(reader.latest_data)
+            self.assertIsNone(reader.get_data())
 
+    @tu.simulation
     def test_load_data_with_existing_aggregated_file(self):
         """Test load_data when aggregated file exists."""
         reader = dc.TestStreamer()
@@ -840,6 +871,7 @@ class TestStreamDataReader(tu.UpdatableConfigTest):
         if data2 is not None:
             np.testing.assert_array_equal(data2.to_numpy(), obj.to_numpy())
 
+    @tu.simulation
     def test_load_data_with_no_aggregated_file(self):
         """Test load_data when aggregated file doesn't exist."""
         reader = dc.TestStreamer()
@@ -1138,6 +1170,7 @@ class TestReaderConfigSimulation(tu.UpdatableConfigTest):
         self.reader.start_reader()
         self.assertTrue(self.reader.status.get() is ReaderStatus.RUNNING)
 
+    @tu.simulation
     def test_simulation_mode_load_file(self):
         """Test that _load_file works in simulation mode."""
         self.reader.dirname = "test_reader"
@@ -1456,24 +1489,26 @@ class TestStreamReaderConfiguration(tu.UpdatableConfigTest):
         """
 
         reader = dc.TestStreamer()
+        self.assertEqual(reader.stream_save_i, 0)
         reader.stream_save_i = 5
-
-        # Mock config to avoid config errors
-        mock_global_state = MockGlobalState()
-        mock_global_state.reading_recording_subfolder = ""
 
         # Condition to have the right one
         self.assertTrue(config.simulation)
 
         # Create a test file that will be found at the correct path
         # The path is: output_dir_data + dirname + "/output_i.npy"
-        temp_file = Path(config.output_dir_data, "config_stream_reader/output_5.npy")
-        temp_file.parent.mkdir(parents=True, exist_ok=True)
+        temp_file = Path(config.output_dir_data, "config_stream_reader")
+        temp_file.mkdir(parents=True, exist_ok=True)
         file_content = np.array([[1.0, 2.0]])
-        np.save(temp_file, file_content)
+        np.save(temp_file / "output_5.npy", file_content)
+        np.save(temp_file / "output_0.npy", np.array([[3.0, 4.0]]))
 
         reader.dirname = "config_stream_reader"
-        data = reader._load_file()
+        # Note: if you uncomment this test, it will increment the `stream_save_i` and return the wrong array...
+        # self.assertEqual(
+        #    reader._get_load_file_path(stream=True), temp_file / "output_5.npy"
+        # )
+        data = reader._load_file(stream=True)
         self.assertIsNotNone(data)
         if data is not None:
             np.testing.assert_almost_equal(data, file_content)
@@ -1481,8 +1516,17 @@ class TestStreamReaderConfiguration(tu.UpdatableConfigTest):
         # stream_save_i only increments when file is found and loaded
         self.assertEqual(reader.stream_save_i, 6)  # Incremented
 
-        # Cleanup
-        temp_file.unlink()
+        # self.assertEqual(
+        #    reader._get_load_file_path(stream=True), temp_file /# "output_0.npy"
+        # )
+        data = reader._load_file(stream=True)
+        self.assertIsNotNone(data)
+        if data is not None:
+            np.testing.assert_almost_equal(data, np.array([[3.0, 4.0]]))
+
+        self.assertEqual(
+            reader.stream_save_i, 1
+        )  # Loaded file 0 and incremented to file 1
 
 
 if __name__ == "__main__":

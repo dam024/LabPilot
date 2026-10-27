@@ -14,6 +14,7 @@ import queue
 import enum
 import shutil
 import traceback
+import tqdm
 from dataclasses import dataclass, fields
 
 import logging
@@ -133,6 +134,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         self.queue = queue.Queue[T]()
         self.latest_data: T | None = None
         self.recording_save_index = 0
+        self.stream_save_i = 0
         super().__init__()
 
     @classmethod
@@ -405,6 +407,7 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
             data = self.queue.get_nowait()
 
         self.latest_data = None
+        self.stream_save_i = 0
 
     @abstractmethod
     def process_data(self, raw_data: np.ndarray) -> T:
@@ -683,17 +686,112 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         # Since saving takes a long time, this task is delegate to the global queue
         bgs.BackgroundSaveThread.addSaveAction(data, path, force_save)
 
-    def _load_file(self, path: str | None = None) -> np.ndarray | None:
+    @classmethod
+    def read_reader_data(cls, path: str | Path) -> np.ndarray:
         """
-        Load data from a file.
+        Loads all the data from a reader folder.
+
+        This method will load and aggregate all the data. If the data have not yet been aggregated, a `data.npy` file will be created to allow faster access next time.
 
         Args:
-            path: Optional path to load data from. If None, loads from the
-                configured output directory.
+            path (str | Path): Path to the folder containing the data of the reader
+        """
+        direct_file = Path(path) / "data.npy"
+        data = np.array([])
 
-        Returns:
+        # List all files with the format output_%1.py
+        all_files = list(Path(path).glob("output_*.npy"))
+
+        # Check if it already exists as a single file
+        if os.path.exists(direct_file):
+            data = np.load(direct_file)
+        else:
+            for i in tqdm.tqdm(range(len(all_files)), desc="aggregation"):
+                data_path = Path(path) / f"output_{i}.npy"
+
+                data_step = np.load(data_path)
+
+                if data.shape == (0,):
+                    data = data_step.copy()
+                else:
+                    data = np.append(data, data_step, axis=1)
+
+            np.save(direct_file, data)
+
+        return data
+
+    def _get_load_file_path(
+        self, path: str | Path | None = None, stream: bool = False
+    ) -> Path:
+        """Returns the path that needs to be used to load the data"""
+        if path is None:
+            recording_manager = rm.RecordingManager.main()
+            # assert (
+            #    recording_manager.reading_recording_subfolder is not None
+            # ), f"You must select a recording folder or provide a file"
+
+            recording_path = Path(
+                recording_manager.reading_recording_subfolder or config.output_dir_data
+            )
+        else:
+            recording_path = Path(path)
+
+        # Go into the folder having all the data
+        recording_path /= self.dirname
+
+        # Get the correct file
+        if stream:
+            recording_path /= f"output_{self.stream_save_i}.npy"
+            self.stream_save_i += 1
+
+            if not recording_path.exists():
+                recording_path = recording_path.parent / "output_0.npy"
+                if not recording_path.exists():
+                    raise FileNotFoundError(
+                        f"No data available for reader `{self.name}` at path {recording_path.parent}/"
+                    )
+
+                self.stream_save_i = 1
+
+        # else:
+        #    recording_path /= "data.npy"
+
+        return recording_path
+
+    def _load_file(
+        self, path: str | Path | None = None, stream: bool = False
+    ) -> np.ndarray | None:
+        """
+        Loads the raw data from a file.
+
+        Args:
+            path (str | Path | None, optional): Optional path to the recording folder containing the data. If None, loads from the
+                configured output directory.
+            stream (bool, optional): If `True`, read from the next output_%1.npy file. If `False`, read from the data.npy file or aggregate everything into a data.npy file. If `path is not None`, this parameter is ignored
+
+
+        Note:
+            If `stream=True`, `self.stream_save_i` is the counter to know which file is next. When the current `self.stream_save_i` doesn't exist, the counter goes back to zero and throws an error if the file still doesn't exist.
+
+        Return:
             np.ndarray | None: The loaded data, or None if the file doesn't exist.
         """
+        if not config.simulation:
+            raise RuntimeError("You can only load data in simulation mode!")
+
+        recording_path = self._get_load_file_path(path, stream)
+
+        if not recording_path.exists():
+            logger.warning(
+                f"No data found for `{self.__class__.__name__}` at path {recording_path}"
+            )
+            return None
+
+        if stream:
+            return np.load(recording_path)
+        else:
+            return self.read_reader_data(recording_path)
+
         if path is not None:
             if not os.path.isfile(path):
                 filename = os.path.join(path, self.dirname + ".npy")
@@ -733,7 +831,10 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         """
         data = self._load_file(path)
         if data is None:
-            return None
+            raise NoDataError(
+                f"No data is available in for the `DataReader`: `{self.__class__.__name__}` (path: {path})"
+            )
+
         logger.debug(f"Data size [{self.__class__.__name__}]: {data.shape}")
 
         # Process the data
@@ -908,7 +1009,7 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
         d[d_from_raw : None if data_from > 0 else data_from] = raw_data[from_raw:]
         return d
 
-    def _get_stream_path(self, i: int) -> str:
+    def _get_stream_path_deprecated(self, i: int) -> str:
         """
         Get the file path for a specific stream file.
 
@@ -924,7 +1025,9 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
         )
         return path
 
-    def _load_file(self, path: str | None = None) -> np.ndarray | None:
+    def _load_file_deprecated(
+        self, path: str | Path | None = None, stream: bool = False
+    ) -> np.ndarray | None:
         """
         Load data from a file, handling stream data in simulation mode.
 
@@ -933,6 +1036,7 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
 
         Args:
             path: Optional path to load data from. If None, uses the default path.
+            stream (bool, optional): If `True`, read from the next output_%1.npy file. If `False`, read from the data.npy file or aggregate everything into a data.npy file
 
         Returns:
             np.ndarray | None: The loaded data, or None if the file doesn't exist.
@@ -966,7 +1070,7 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
                     path,
                 )
 
-        data = super()._load_file(path)
+        data = super()._load_file(path, stream=stream)
 
         # if config.simulation and data is not None:
         # logger.debug(
@@ -1025,7 +1129,7 @@ class StreamDataReader[T: ProcessedData](LiveDataReader[T]):
 
         return out
 
-    def load_data(self, path: str | None = None) -> T | None:
+    def load_data_deprecated(self, path: str | None = None) -> T | None:
         """
         Load all the data for a recording (stream reader specific).
 

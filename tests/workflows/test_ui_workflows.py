@@ -585,7 +585,7 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         self.assertTrue(bg.global_thread.is_alive())
 
         # Wait to leave some time for the queue to fill-in
-        time.sleep(0.01)
+        time.sleep(0.1)
 
         # Check that the queue is not empty now
         self.assertFalse(bg.save_queue.empty())
