@@ -125,6 +125,10 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
     def get_parameters(
         self, frame: QWidget, view: ana.View | None
     ) -> List[GUIParameter]:
+        # Don't have any parameter in simulation mode!
+        if config.simulation:
+            return []
+
         self.find_free_foldername()
 
         parameters = ana.DataAnalysis.get_parameters(self, frame, view)

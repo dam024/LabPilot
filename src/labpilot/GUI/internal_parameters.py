@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 from labpilot import config, globalState
 
-from labpilot.GUI.binding import CBinding, SavedBinding, Status
+from labpilot.GUI.binding import CBinding, SavedBinding, SimulationSavedBinding, Status
 from labpilot.GUI.parameters import GUIParametrable, GUIParameter
 import labpilot.GUI.objects as objects
 from labpilot.analysis import View
@@ -173,6 +173,7 @@ class StatusInterface(GUIParametrable):
     title = "Status"
 
     @Status
+    # @SimulationSavedBinding -> to save the value from session to session
     def recording(self) -> str | None:
         return None
 

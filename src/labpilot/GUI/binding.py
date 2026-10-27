@@ -338,19 +338,21 @@ class Binding(Generic[T]):
         fonchange: Callable[[Any, T], None] | None = None,
         auto_save: bool = True,
         auto_db_save: bool = True,
+        simulation_db_save: bool = False,
     ) -> None:
         """Initialize a new Binding.
 
         Args:
-            func: Definition of the variable. Must be a method returning the
+            func (Callable[[Any], T]): Definition of the variable. Must be a method returning the
                 initial value. The method receives the instance as `cls` in its
                 signature.
-            fonchange: Function to execute if the value changes. See onchange()
+            fonchange (Callable[[Any, T], None] | None, optional): Function to execute if the value changes. See onchange()
                 for adding this after initialization.
-            auto_save: Indicates if this value is saved automatically as a parameter
+            auto_save (bool, optional): Indicates if this value is saved automatically as a parameter
                 in the info.json file. Default: True.
-            auto_db_save: Indicates if the value of this Binding must be saved in the
+            auto_db_save (bool, optional): Indicates if the value of this Binding must be saved in the
                 local database and retrieved automatically. Default: True.
+            simulation_db_save (bool, optional): Indicates if the value of this Binding must be saved in the local database and retrieved automatically when the application is in simulation mode. Default: False
 
         Example:
             @Binding(auto_save=True, auto_db_save=True)
@@ -362,7 +364,11 @@ class Binding(Generic[T]):
         self.func = func
         self.fonchange = fonchange
         self.auto_save = auto_save
+        """Indicates if the value of the binding must be automatically saved in the `info.json` file during recordings"""
         self.auto_db_save = auto_db_save
+        """Indicates if the value of the binding must be automatically saved in the local DB when the application is closed and in measurement mode"""
+        self.simulation_db_save = simulation_db_save
+        """Indicates if the value of the binding must be automatically saved in the local DB when the application is closed and in measurement mode"""
         self.__wrapped__ = func
 
     def onchange(
@@ -556,6 +562,41 @@ class SavedBinding(Binding[T]):
         )
 
 
+class SimulationSavedBinding(Binding[T]):
+    """
+    A `SimulationSavedBinding` is a global shared variable. It represents a parameter for the application.
+
+    It behaves in the exact same way as a `Binding`, except that it is not saved
+    in the parameters (info.json) but is saved in the local storage ONLY when the application is in simulation mode!
+    Usage:
+        Use this for variables that need persistence across sessions but should not appear in measurement parameter files.
+
+    Attributes:
+        auto_save: Always False (inherited from Binding).
+        auto_db_save: Always False (inherited from Binding).
+        simulation_db_save: Always True (inherited from Binding)
+
+
+    Example:
+        @SimulationSavedBinding
+        def internal_counter(cls) -> int:
+            return 0
+    """
+
+    def __init__(
+        self,
+        func: Callable[[Any], T],
+        fonchange: Callable[[Any, T], None] | None = None,
+    ):
+        super().__init__(
+            func=func,
+            fonchange=fonchange,
+            auto_save=False,
+            auto_db_save=False,
+            simulation_db_save=True,
+        )
+
+
 # ============================================================================
 # Decorator helper
 # ============================================================================
@@ -707,11 +748,13 @@ class BindingSupport:
             This is called automatically when the object is garbage collected
             via weakref.finalize.
         """
-        if config.use_gui and not config.simulation and self.__binding_instantiated__:
+        if config.use_gui and self.__binding_instantiated__:
             db = LocalStorage.main()
 
             for name, binding in self._bindings.items():
-                if binding.auto_db_save:
+                if (binding.auto_db_save and not config.simulation) or (
+                    binding.simulation_db_save and config.simulation
+                ):
                     value = getattr(self, name).get()
                     db.set(self, name, value)
 

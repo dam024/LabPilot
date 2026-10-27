@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import Dict, List, Type
 
 # import matplotlib.pyplot as plt
@@ -23,6 +24,8 @@ from PySide6.QtWidgets import (
 import traceback
 
 import logging
+
+from labpilot.recording_manager import RecordingManager
 
 logger = logging.getLogger(__name__)
 
@@ -465,13 +468,21 @@ class MainWindow(QMainWindow, BindingSupport):
         self.plot_timer.start(self.update_interval.get())
 
     def ask_recording_folder(self):
+        # Choose the default path to show the user as the path of the last recording. If it doesn't exists, use the config.output_dir_data
+        default_path = Path(
+            self.status_interface.recording.get() or config.output_dir_data
+        )
+
+        if not default_path.exists():
+            default_path = Path(config.output_dir_data)
+
         path = QFileDialog.getExistingDirectory(
             self,
             "Select the folder containing the recording",
-            config.output_dir_data,
+            str(default_path),
         )
 
-        if not path:
+        if not path or path == "":
             return
 
         self.on_change_recording(path)
@@ -480,10 +491,7 @@ class MainWindow(QMainWindow, BindingSupport):
         """Code that must be executed each time the recording folder is changed (i.e. if we change the source of data) in simulation mode"""
 
         # Set the recording folder
-        self.status_interface.recording = os.path.relpath(
-            new_path,
-            config.output_dir_data,
-        )
+        self.status_interface.recording = os.path.relpath(new_path, os.getcwd())
 
         self.mainGuiLoop.clear_readers_data()
 
