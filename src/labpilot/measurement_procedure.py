@@ -219,7 +219,7 @@ class MeasurementProcedure(ana.DataAnalysis, ana.View):
                 foldername=self.foldername.get(),
                 description=self.description.get(),
             )
-            self.find_free_foldername(current_not_free=True)
+            self.find_free_foldername(current_not_free=save_data)
         except Exception as e:
             logger.error(e)
             traceback.print_exception(e)
