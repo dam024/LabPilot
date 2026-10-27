@@ -367,6 +367,10 @@ class LiveDataReader[T: ProcessedData](params.GUIParametrable):
         Returns:
             T | None: The latest collected data, or None if no data was collected since the previous call.
         """
+        if not config.simulation and config.use_gui and not self.is_running:
+            logger.warning(
+                f"You tried to access data of a reader that is not running! It might contain data that are not up to date! Reader: {self.name}"
+            )
         data: T | None = self.latest_data
         while not self.queue.empty():
             data = self.queue.get_nowait()
