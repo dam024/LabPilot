@@ -708,4 +708,4 @@ plot_refresh_rate = 500
 
 ## Support
 
-For questions or issues, please refer to the instrument documentation or create an issue on the repository. Contact information are available on the ![pypi release page](https://pypi.org/project/labpilot/)
+For questions or issues, please refer to the instrument documentation or create an issue on the repository. Contact information are available on the [pypi release page](https://pypi.org/project/labpilot/)
