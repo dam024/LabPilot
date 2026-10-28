@@ -1204,6 +1204,36 @@ class TestBindingIntegration(UpdatableConfigTest):
         self.assertIsNone(optional_status._variable.get())
         self.assertIsNone(optional_saved._variable.get())
 
+    def test_integration_multiple_signals(self):
+        """Test handling of multiple objects connected to the qt_variable()."""
+
+        changes = []
+        changes2 = []
+        parent = QObject()
+
+        @Binding
+        def tracked_value(cls) -> int:
+            return 0
+
+        tracked_value.create_variable(TestBindingSupport, parent)
+
+        def on_change(v):
+            changes.append(v)
+
+        def on_change2(v):
+            changes2.append(v)
+
+        tracked_value._variable.qt_variable().valueChanged.connect(on_change)
+        tracked_value._variable.qt_variable().valueChanged.connect(on_change2)
+
+        tracked_value._variable.set(None, 10)
+        tracked_value._variable.set(None, 20)
+        tracked_value._variable.set(None, 30)
+
+        self.assertEqual(len(changes), 3)
+        self.assertEqual(changes, [10, 20, 30])
+        self.assertEqual(changes2, changes)
+
     def test_integration_different_value_types(self):
         """Test handling of different value types."""
 
@@ -1320,6 +1350,15 @@ class TestBindingIntegration(UpdatableConfigTest):
 
         value = cb.get()
         self.assertEqual(value, 42)
+
+    def test_double_qt_variable_initialization(self):
+        """Ensures that an error is thrown if the qt variable is emitted twice"""
+        obj = QObject()
+        cb = CBinding(0, parent=None, owner_class=TestBindingSupport, onchange=None)
+
+        cb.set_parent(obj)
+        with self.assertRaises(BindingAlreadyInitializedError):
+            cb.set_parent(obj)
 
 
 # ============================================================================

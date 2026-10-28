@@ -167,6 +167,7 @@ class CBinding(Generic[T]):
         parent: QObject | None,
         owner_class: Type["BindingSupport"],
         onchange: Callable[[Any, T], None] | None,
+        name: str | None = None,
     ) -> None:
         """Initialize the binding storage.
 
@@ -179,16 +180,29 @@ class CBinding(Generic[T]):
         self.__value = initial_value
         self.__onchange = onchange
         self.owner_class = owner_class
+        self.name = name
 
+        self._variable = None
         if parent is not None:
             self.set_parent(parent)
-        else:
-            self._variable = None
 
     def set_parent(self, parent: QObject):
-        """Register the Window that will be parent to the current Binding object"""
-        self._variable = QtBindingVariable(self.__value, parent)
-        self._variable.valueChanged.connect(self.__qt_change_handler__)
+        """Register the Window that will be parent to the current Binding object
+
+        Args:
+            parent (QObject): Parent object
+
+        Raises:
+            BindingAlreadyInitializedError: If you have already assigned a parent object, this error will be raised
+        """
+        if self._variable is None:
+            self._variable = QtBindingVariable(self.__value, parent)
+            self._variable.valueChanged.connect(self.__qt_change_handler__)
+            self._variable.setObjectName(f"{self.owner_class.__name__}.{self.name}")
+        else:
+            raise BindingAlreadyInitializedError(
+                f"You cannot set the parent window twice. Binding: {self.owner_class.__name__}.{self.name}"
+            )
 
     def qt_variable(self) -> QtBindingVariable[T]:
         """Get the Qt variable for signal emission.
@@ -447,6 +461,7 @@ class Binding(Generic[T]):
             parent=parent,
             owner_class=owner_class,
             onchange=self.fonchange,
+            name=self.func.__name__,
         )
 
     def __get__(self, instance, owner) -> CBinding[T]:

@@ -302,6 +302,43 @@ class TestQtWidgets(UpdatableConfigTest):
 
         action.assert_called_once()
 
+    def test_button_binding_text_updates(self):
+        """Tests that when I change the value of the binding, the text of the button updates"""
+        action = Mock()
+
+        callback = Mock()
+
+        parent = QObject()
+
+        d = (
+            DummyBinding()
+        )  # We need to have at least one instantiated to allow normal usage...
+
+        binding = CBinding(
+            initial_value="Run",
+            parent=parent,
+            onchange=callback,
+            owner_class=DummyBinding,
+        )
+
+        button = ButtonWidget(
+            self.parent,
+            binding,
+            action,
+        )
+
+        spy = QSignalSpy(binding.qt_variable().valueChanged)
+
+        self.assertEqual(button.btn.text(), "Run")
+        # Change the binding
+        instance = DummyBinding()
+        binding.set(instance, "Run Test")
+
+        # Detect if the signal was launched
+        self.assertEqual(spy.count(), 1)
+
+        self.assertEqual(button.btn.text(), "Run Test")
+
     # ----------------------------------
     # GUILogArea
     # ----------------------------------

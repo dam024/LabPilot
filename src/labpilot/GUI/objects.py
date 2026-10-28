@@ -463,15 +463,15 @@ class ButtonWidget(Widget):
         self, parent: QWidget, text: str | CBinding[str], action: Callable[[], Any]
     ):
         if isinstance(text, CBinding):
-            btn = QPushButton(text.get(), parent)
+            self.btn = QPushButton(text.get(), parent)
 
-            text.qt_variable().valueChanged.connect(btn.setText)
+            text.qt_variable().valueChanged.connect(self.btn.setText)
         else:
-            btn = QPushButton(text, parent)
+            self.btn = QPushButton(text, parent)
 
-        btn.clicked.connect(action)
+        self.btn.clicked.connect(action)
 
-        super().__init__(btn)
+        super().__init__(self.btn)
 
 
 class GUILogArea(Widget):

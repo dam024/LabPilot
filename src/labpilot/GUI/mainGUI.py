@@ -34,7 +34,12 @@ from labpilot._logging import ConsoleLogger
 import labpilot.analysis as ana
 import labpilot.MainLoopHandler as mainLoop
 import labpilot.GUI.internal_parameters as internal_params
-from labpilot.GUI.binding import Binding, Status, BindingSupport
+from labpilot.GUI.binding import (
+    Binding,
+    BindingAlreadyInitializedError,
+    Status,
+    BindingSupport,
+)
 from labpilot.data_management.measurement_information import RecordingInfos
 
 from labpilot.GUI.objects import GUILogArea, GraphCanvas
@@ -358,7 +363,10 @@ class MainWindow(QMainWindow, BindingSupport):
             for param in (
                 self.get_default_parametrables(view) + view.get_parametrables()
             ):
-                param.set_window(window=self)
+                try:
+                    param.set_window(window=self)
+                except BindingAlreadyInitializedError:
+                    pass
                 widget = param.create_widget(frame=frame, view=view)
 
                 frame_layout.addWidget(widget)
