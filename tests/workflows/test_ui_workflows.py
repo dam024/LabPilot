@@ -33,6 +33,7 @@ from PySide6.QtWidgets import QApplication
 
 
 from labpilot.DataReceiver import LiveDataReader
+from labpilot.GUI.binding import CBinding
 from labpilot.GUI.mainGUI import MainGUILoop, MainWindow
 from labpilot import config, utils
 from labpilot.recording_manager import RecordingManager
@@ -258,10 +259,6 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         # Select the view first
         self.loop.select_active_view(test_view, adapt_threads=False)
 
-        # Start the experiment with REAL start_threads (not mocked)
-        # This calls regularize_threads() internally which will start the threads
-        self.loop.main_thread_loop()
-
         for reader in self.loop.readers:
             self.assertTrue(reader.__class__.__binding_instantiated__)
 
@@ -304,9 +301,8 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         # Select the view
         self.loop.select_active_view(test_view)
 
-        # Start the experiment with REAL start_threads (not mocked)
+        # Start the experiment
         self.loop.start_threads()
-        self.loop.main_thread_loop()
 
         # Ensures there are readers
         self.assertGreater(len(self.loop.readers), 0)
@@ -373,7 +369,6 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
 
         # Start the experiment first
         self.loop.start_threads()
-        self.loop.main_thread_loop()
 
         # Stop the experiment
         self.loop.stop_threads()
@@ -408,7 +403,6 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
 
         # Start the experiment
         self.loop.start_threads()
-        self.loop.main_thread_loop()
 
         # Stop the experiment
         self.loop.stop_threads()
@@ -485,7 +479,6 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         readers = get_test_readers()
         self.loop.select_active_view(test_view)
         self.loop.start_threads()
-        self.loop.main_thread_loop()
 
         # Step 5: Verify readers are running (multi-threading validation)
         for reader in readers:
@@ -544,11 +537,18 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         test_view = self.loop.views[-1]
 
         # Select the view
-        self.loop.select_active_view(test_view)
+        self.loop.select_active_view(test_view, adapt_threads=False)
 
-        # Start the experiment with REAL start_threads (not mocked)
+        # Check that no thread is running and refresh_delay is 0.0
+        for reader in self.loop.readers:
+            self.assertFalse(reader.is_running, reader.name)
+            if isinstance(reader.refresh_delay, CBinding):
+                self.assertEqual(reader.refresh_delay.get(), 0)
+            else:
+                self.assertEqual(reader.refresh_delay, 0)
+
+        # Start the experiment
         self.loop.start_threads()
-        self.loop.main_thread_loop()
 
         # Verify that the save queue is available
         bg = bgs.BackgroundSaveThread.main()
@@ -625,13 +625,16 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
         # Join the threads
         self.join_threads()
 
+        self.assertTrue(bg.save_queue.empty())
+
         # Check that some files were saved for each reader that was running
         base_path = Path(config.output_dir_data) / recording_foldername
         for reader in self.loop.readers:
             reader_path = base_path / reader.dirname
+
             self.assertTrue(
                 reader_path.exists(),
-                f"Reader path doesn't exist in recording at path: {reader_path}",
+                f"Reader `{reader.name}` path doesn't exist in recording at path: {reader_path}",
             )
             # Checks that at least one data file exists
             data_file = reader_path / "output_0.npy"
@@ -667,7 +670,6 @@ class TestUIWorkflows(tu.UpdatableConfigTest):
 
         # Start the experiment - verify threads are started
         self.loop.start_threads()
-        self.loop.main_thread_loop()
 
         # Verify all readers have running collector threads
         running_threads_count = 0

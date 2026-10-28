@@ -48,7 +48,7 @@ class BuildPy(build_py):
 
 setup(
     name="labpilot",
-    version="0.1.0",
+    version="0.2.0",
     author="Damien Jaccoud",
     author_email="damien.jaccoud@hotmail.com",
     description="Automatic measurement interface for experiments",

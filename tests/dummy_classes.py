@@ -76,7 +76,7 @@ class TestStreamer(StreamDataReader[TestData]):
     @Binding
     def refresh_delay(self) -> float:
         """Test of having the refresh_delay as a Binding"""
-        return 0.5
+        return 0.0
 
     def __init__(self, *args, **kwargs):
         self.t = 0

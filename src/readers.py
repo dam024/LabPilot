@@ -101,7 +101,7 @@ class ExampleStreamer(StreamDataReader[ExampleData]):
         """Override this method to define some controls in the application parameters."""
         parameters: List[params.GUIParameter] = []
 
-        # Example: Add a parameter for the `self.value` Binding. Use NumericalValueInput for float and int values
+        # Example: Add a parameter for the `self.value` Binding. Use NumericalValueInput for float and int values. Other widgets are available in `labpilot.GUI.objects`
         parameters.append(
             params.GUIParameter(
                 widget=gui_obj.NumericalValueInput(
