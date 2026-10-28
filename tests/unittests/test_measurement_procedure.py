@@ -470,6 +470,10 @@ class TestMeasurementProcedureLoadPlotData(du.UpdatableConfigTest):
     def setUp(self) -> None:
         """Set up for load_plot_data tests."""
         self.procedure = TestDataMeasurementFolder()
+
+        # Set the readers, as they are required for the load_plot_data to work!!!
+        readers = self.procedure.get_all_readers_dependencies([self.procedure])
+        self.procedure.set_readers([reader() for reader in readers])
         super().setUp()
 
     def test_load_plot_data_without_existing_file_does_nothing(self):
@@ -724,6 +728,218 @@ class TestMeasurementProcedureConcurrency(du.UpdatableConfigTest):
                 mock_treat.return_value = None
                 # Should not raise an exception
                 mock_treat()
+
+
+class TestDataMeasurementProcedureDefaultRefreshPlots(MeasurementProcedure):
+    """
+    Test subclass that does NOT override refresh_plots().
+    Used to verify that the default implementation works correctly.
+    """
+
+    name: str = "Test Data Measurement (No Override)"
+    title: str = "Test Title (No Override)"
+    dirname: str = "test_data_no_override"
+
+    def __init__(self, *args, **kwargs):
+        self.dirname = "test_data_no_override"
+        self.graphs = []
+        super().__init__(*args, **kwargs)
+
+    def execute(self) -> np.ndarray:
+        """Placeholder execute method for testing."""
+        return np.zeros((2, 10))
+
+
+class TestMeasurementProcedureRefreshPlotsIntegrity(du.UpdatableConfigTest):
+    """
+    Integrity tests for the refresh_plots() bug fix.
+
+    Bug Fix: b298b957 - "Add again default implementation of refresh_plots()"
+    Before: refresh_plots() was abstract with no implementation
+    After: Added default implementation that cascades refresh to other analyses
+
+    The default implementation ensures that:
+    1. Subclasses that don't override refresh_plots() still have plots refreshed
+    2. The method cascades to refresh plots from all other analyses
+    3. The method calls super().refresh_plots() to handle its own plots
+    """
+
+    def test_refresh_plots_exists_on_measurement_procedure(self):
+        """
+        Test that refresh_plots method exists on MeasurementProcedure.
+
+        This is the minimal check to ensure the bug fix is in place.
+        Before the fix, refresh_plots was abstract with no implementation.
+        """
+        self.assertTrue(hasattr(MeasurementProcedure, "refresh_plots"))
+        self.assertTrue(callable(MeasurementProcedure.refresh_plots))
+
+    def test_refresh_plots_works_without_override(self):
+        """
+        Test that refresh_plots() works on subclasses that don't override it.
+
+        This is the KEY integrity test: subclasses that don't override
+        refresh_plots() should still be able to call it without errors.
+        Before the fix, this would fail with a NotImplementedError.
+
+        This test verifies that the default implementation in
+        MeasurementProcedure is properly in place and functional.
+        """
+        procedure = TestDataMeasurementProcedureDefaultRefreshPlots()
+
+        # Should not raise an exception
+        result = procedure.refresh_plots()
+
+        # The method should return (even if it returns None)
+        self.assertIsNone(result)
+
+    def test_refresh_plots_returns_none_by_default(self):
+        """
+        Test that refresh_plots() returns None by default (when not overridden).
+
+        The default implementation should return the result of super().refresh_plots()
+        which typically returns None.
+        """
+        procedure = TestDataMeasurementProcedureDefaultRefreshPlots()
+
+        result = procedure.refresh_plots()
+
+        self.assertIsNone(result)
+
+    def test_refresh_plots_method_signature(self):
+        """
+        Test that refresh_plots() has the correct signature.
+
+        The method should accept no arguments and return None (or whatever
+        super().refresh_plots() returns).
+        """
+        import inspect
+
+        sig = inspect.signature(MeasurementProcedure.refresh_plots)
+
+        # Should accept self only
+        params = list(sig.parameters.keys())
+        self.assertEqual(len(params), 1)  # Only 'self'
+        self.assertEqual(params[0], "self")
+
+    def test_refresh_plots_does_not_require_arguments(self):
+        """
+        Test that refresh_plots() can be called without arguments.
+
+        The method should be callable with no arguments (except self).
+        """
+        procedure = TestDataMeasurementProcedureDefaultRefreshPlots()
+
+        # Should not raise TypeError about missing arguments
+        try:
+            procedure.refresh_plots()
+            self.assertTrue(True)
+        except TypeError as e:
+            self.fail(f"refresh_plots() should not require arguments: {e}")
+
+
+class TestMeasurementProcedureCascadingRefresh(du.UpdatableConfigTest):
+    """
+    Integrity tests for the cascading refresh behavior.
+
+    The MeasurementProcedure.refresh_plots() implementation should:
+    1. Iterate over all analyses in self.analysis
+    2. Call refresh_plots() on each analysis (except itself)
+    3. Call super().refresh_plots() to refresh its own plots
+    """
+
+    def test_refresh_plots_with_empty_analysis_list(self):
+        """
+        Test that refresh_plots works when there are no other analyses.
+
+        This verifies that the cascading logic doesn't break when
+        self.analysis is empty.
+        """
+        procedure = TestDataMeasurementProcedureDefaultRefreshPlots()
+        procedure.analysis = []
+
+        # Should not raise an exception
+        result = procedure.refresh_plots()
+
+        self.assertIsNone(result)
+
+    def test_refresh_plots_cascades_to_other_analyses(self):
+        """
+        Test that refresh_plots calls refresh_plots on other analyses.
+
+        This verifies that the cascading behavior is in place.
+        """
+        # Create a mock analysis that tracks if refresh_plots was called
+        mock_analysis = Mock(spec=ana.DataAnalysis)
+        mock_analysis.refresh_plots = Mock(return_value=None)
+        mock_analysis.analysis = []
+
+        procedure = TestDataMeasurementProcedureDefaultRefreshPlots()
+        procedure.analysis = [mock_analysis]
+
+        # Call refresh_plots
+        result = procedure.refresh_plots()
+
+        # Verify that the cascading call was made
+        mock_analysis.refresh_plots.assert_called_once()
+
+    def test_refresh_plots_with_multiple_analyses(self):
+        """
+        Test that refresh_plots calls refresh_plots on all other analyses.
+
+        This verifies that the cascading behavior works with multiple analyses.
+        """
+        # Create multiple mock analyses
+        mock_analyses = []
+        for i in range(3):
+            mock_analysis = Mock(spec=ana.DataAnalysis)
+            mock_analysis.refresh_plots = Mock(return_value=None)
+            mock_analysis.analysis = []
+            mock_analyses.append(mock_analysis)
+
+        procedure = TestDataMeasurementProcedureDefaultRefreshPlots()
+        procedure.analysis = mock_analyses
+
+        # Call refresh_plots
+        result = procedure.refresh_plots()
+
+        # All analyses should be refreshed
+        for analysis in mock_analyses:
+            analysis.refresh_plots.assert_called_once()
+
+    def test_refresh_plots_order_matters(self):
+        """
+        Test that the order of refresh_plots calls is deterministic.
+
+        The cascading should happen in a consistent order.
+        """
+        procedure = TestDataMeasurementProcedureDefaultRefreshPlots()
+
+        # Create analyses with timestamps to track order
+        mock_analyses = []
+        call_order = []
+
+        for i in range(2):
+            mock_analysis = Mock(spec=ana.DataAnalysis)
+
+            def make_caller(index):
+                def refresh_plots(*args, **kwargs):
+                    call_order.append(index)
+                    return None
+
+                return refresh_plots
+
+            mock_analysis.refresh_plots = make_caller(i)
+            mock_analysis.analysis = []
+            mock_analyses.append(mock_analysis)
+
+        procedure.analysis = mock_analyses
+
+        # Call refresh_plots
+        result = procedure.refresh_plots()
+
+        # Order should be [0, 1]
+        self.assertEqual(call_order, [0, 1])
 
 
 class TestInsertionLoss(du.UpdatableConfigTest):

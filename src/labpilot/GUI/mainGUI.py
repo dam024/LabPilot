@@ -491,12 +491,13 @@ class MainWindow(QMainWindow, BindingSupport):
     def on_change_recording(self, new_path: str):
         """Code that must be executed each time the recording folder is changed (i.e. if we change the source of data) in simulation mode"""
 
-        # Set the recording folder
-        self.status_interface.recording = os.path.relpath(new_path, os.getcwd())
+        if config.simulation:
+            # Set the recording folder
+            self.status_interface.recording = os.path.relpath(new_path, os.getcwd())
 
-        self.mainGuiLoop.clear_readers_data()
+            self.mainGuiLoop.clear_readers_data()
 
-        self.clear_all_plots()
+            self.clear_all_plots()
 
         # Load the parameters
         infos = RecordingInfos()
@@ -506,7 +507,8 @@ class MainWindow(QMainWindow, BindingSupport):
             apply_parameters=True,
         )
 
-        self.mainGuiLoop.reload_readers_data()
+        if config.simulation:
+            self.mainGuiLoop.reload_readers_data()
 
     # --------------------------------------------------
     # Menu
@@ -518,10 +520,19 @@ class MainWindow(QMainWindow, BindingSupport):
             simulation_menu = menubar.addMenu("Simulation Mode")
 
             action = QAction(
-                "Select Recording Folder...",
-                self,
+                "Select Recording Folder...", self, shortcut=QKeySequence("Ctrl+R")
             )
 
             action.triggered.connect(self.ask_recording_folder)
 
             simulation_menu.addAction(action)
+
+        if not config.simulation:
+            experiment_menu = menubar.addMenu("Experiment")
+
+            action = QAction(
+                "Load Experiment Parameters...", self, shortcut=QKeySequence("Ctrl+P")
+            )
+
+            action.triggered.connect(self.ask_recording_folder)
+            experiment_menu.addAction(action)

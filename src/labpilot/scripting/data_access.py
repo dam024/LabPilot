@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 from labpilot import config
 from labpilot.data_management.measurement_information import RecordingInfos
 from labpilot.MainLoopHandler import ScriptingLoopHandler
+import labpilot.DataReceiver as dr
 
 
 def list_recording_folders(base_path: str | Path) -> List[Path]:
@@ -79,7 +80,9 @@ def list_experiment_folders(base_path: str | Path) -> List[Path]:
 
 
 def read_data(
-    path_template: str, zip_save: bool = False, delete_detail_outputs: bool = True
+    path_template: str,
+    zip_save: bool = False,
+    delete_detail_outputs: bool = True,
 ) -> np.ndarray:
     """From a recording, aggregate all data from all outputs to create a single file with everything
 
@@ -95,29 +98,10 @@ def read_data(
     direct_file = os.path.join(os.path.dirname(path_template), "data.npy")
     zip_file = os.path.join(os.path.dirname(path_template), "originals.zip")
 
-    data = np.array([])
+    data = dr.LiveDataReader.read_reader_data(os.path.dirname(path_template))
 
     # List all files with the format output_%1.py
     all_files = list(Path(os.path.dirname(path_template)).glob("output_*.npy"))
-
-    # Check if it already exists as a single file
-    if os.path.exists(direct_file):
-        data = np.load(direct_file)
-    else:
-        for i in tqdm.tqdm(range(len(all_files)), desc="aggregation"):
-            # print(f"Importing {i}/{len(all_files)}")
-            path = path_template.replace("%1", str(i))
-            # data_step = np.mean(np.load(path), axis=-1, keepdims=True)
-            data_step = np.load(path)
-
-            if data.shape == (0,):
-                data = data_step.copy()
-            else:
-                data = np.append(data, data_step, axis=1)
-
-            # print(data.shape, data_step.shape)
-
-        np.save(direct_file, data)
 
     # Find all output_*.npy files
     if zip_save and not os.path.exists(zip_file):
